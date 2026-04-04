@@ -9,7 +9,7 @@ const ROLE_PATHS: Record<string, string> = {
   technician: '/dashboard/technician',
 }
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) {
@@ -40,5 +40,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/login', '/register'], 
+  matcher: ['/dashboard/:path*', '/login', '/register'],
 }
