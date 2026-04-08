@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { logoutUser, getStoredUser, type Role } from '@/lib/auth'
 
 const NAV: Record<Role, { label: string; href: string }[]> = {
@@ -61,7 +61,16 @@ export default function Sidebar() {
   const pathname = usePathname()
   const router = useRouter()
   const [loggingOut, setLoggingOut] = useState(false)
-  const user = getStoredUser()
+  const [user, setUser] = useState<any>(null)
+  const [mounted, setMounted] = useState(false)
+
+  // Load user data only on client after mount
+  useEffect(() => {
+    const userData = getStoredUser()
+    setUser(userData)
+    setMounted(true)
+  }, [])
+
   const role = (user?.role ?? 'customer') as Role
   const nav = NAV[role]
 
@@ -75,6 +84,15 @@ export default function Sidebar() {
     document.cookie = 'auth_token=; path=/; max-age=0'
     document.cookie = 'auth_role=; path=/; max-age=0'
     router.push('/login')
+  }
+
+  // Don't render until mounted to avoid hydration mismatch
+  if (!mounted) {
+    return (
+      <aside className="w-[220px] flex-shrink-0 h-screen sticky top-0 bg-[#0c0c14] border-r border-white/[0.06] flex flex-col px-3 py-6">
+        {/* Skeleton loading state */}
+      </aside>
+    )
   }
 
   return (
