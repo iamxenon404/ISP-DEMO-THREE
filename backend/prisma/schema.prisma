@@ -1,33 +1,33 @@
-generator client {
-  provider = "prisma-client-js"
-}
+import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common'
+import { PrismaClient } from '@prisma/client'
+import { PrismaPg } from '@prisma/adapter-pg'
+import * as dotenv from 'dotenv'
 
-datasource db {
-  provider = "postgresql"
-}
+dotenv.config()
 
-enum Role {
-  customer
-  admin
-  support
-  technician
-}
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! })
+const prismaClient = new PrismaClient({ adapter })
 
-enum UserStatus {
-  pending
-  active
-  suspended
-}
+@Injectable()
+export class PrismaService implements OnModuleInit, OnModuleDestroy {
 
-model User {
-  id        Int        @id @default(autoincrement())
-  name      String
-  email     String     @unique
-  password  String
-  role      Role       @default(customer)
-  status    UserStatus @default(active)
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  get user() {
+    return prismaClient.user
+  }
 
-  @@map("users")
+  get plan() {
+    return prismaClient.plan
+  }
+
+  get subscription() {
+    return prismaClient.subscription
+  }
+
+  async onModuleInit() {
+    await prismaClient.$connect()
+  }
+
+  async onModuleDestroy() {
+    await prismaClient.$disconnect()
+  }
 }
