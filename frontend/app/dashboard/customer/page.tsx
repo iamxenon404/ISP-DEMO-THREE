@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { getStoredUser } from '@/lib/auth'
 
 const stats = [
@@ -21,7 +22,25 @@ const STATUS_STYLE: Record<string, string> = {
 }
 
 export default function CustomerOverview() {
-  const user = getStoredUser()
+  const [user, setUser] = useState<any>(null)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    const userData = getStoredUser()
+    setUser(userData)
+    setMounted(true)
+  }, [])
+
+  if (!mounted) {
+    return (
+      <div className="flex flex-col gap-8">
+        <div>
+          <h1 className="text-white text-2xl font-semibold tracking-tight mb-1">Good morning 👋</h1>
+          <p className="text-white/35 text-sm">Loading your account...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col gap-8">

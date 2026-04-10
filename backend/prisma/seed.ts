@@ -13,9 +13,9 @@ async function main() {
 
   // Seed plans
   const plans = [
-    { name: 'Basic',    speed: '10Mbps',  price: 5000  },
-    { name: 'Standard', speed: '50Mbps',  price: 15000 },
-    { name: 'Fiber',    speed: '100Mbps', price: 25000 },
+    { name: 'Basic',    speed: 10,  price: 5000  },
+    { name: 'Standard', speed: 50,  price: 15000 },
+    { name: 'Fiber',    speed: 100, price: 25000 },
   ]
 
   const createdPlans = []
@@ -32,9 +32,9 @@ async function main() {
 
   // Seed users
   const users = [
-    { name: 'Admin User',    email: 'admin@isp.com',      role: 'admin'      as const },
-    { name: 'John Customer', email: 'customer@isp.com',   role: 'customer'   as const },
-    { name: 'Sarah Support', email: 'support@isp.com',    role: 'support'    as const },
+    { name: 'Admin User',    email: 'admin@isp.com',      role: 'admin' as const },
+    { name: 'John Customer', email: 'customer@isp.com',   role: 'customer' as const },
+    { name: 'Sarah Support', email: 'support@isp.com',    role: 'support' as const },
     { name: 'Tech Mike',     email: 'technician@isp.com', role: 'technician' as const },
   ]
 
