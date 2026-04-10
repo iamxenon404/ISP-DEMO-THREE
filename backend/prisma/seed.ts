@@ -11,62 +11,71 @@ const prisma = new PrismaClient({ adapter })
 async function main() {
   const password = await bcrypt.hash('password', 10)
 
-  // Seed plans
+  console.log('🌱 Seeding plans...')
   const plans = [
     { name: 'Basic',    speed: 10,  price: 5000  },
     { name: 'Standard', speed: 50,  price: 15000 },
-    { name: 'Fiber',    speed: 100, price: 25000 },
+    { name: 'Premium',  speed: 100, price: 25000 },
   ]
 
   const createdPlans = []
   for (const p of plans) {
     const plan = await prisma.plan.upsert({
-      where:  { id: plans.indexOf(p) + 1 },
+      where: { id: createdPlans.length + 1 },
       update: p,
       create: p,
     })
     createdPlans.push(plan)
+    console.log(`  ✓ Created plan: ${plan.name} - ${plan.speed}Mbps`)
   }
 
-  console.log('✅ Plans seeded')
-
-  // Seed users
+  console.log('👥 Seeding users...')
   const users = [
-    { name: 'Admin User',    email: 'admin@isp.com',      role: 'admin' as const },
-    { name: 'John Customer', email: 'customer@isp.com',   role: 'customer' as const },
-    { name: 'Sarah Support', email: 'support@isp.com',    role: 'support' as const },
-    { name: 'Tech Mike',     email: 'technician@isp.com', role: 'technician' as const },
+    { name: 'John Customer', email: 'customer@isp.com',   role: 'customer' },
+    { name: 'Admin User',    email: 'admin@isp.com',      role: 'admin' },
+    { name: 'Sarah Support', email: 'support@isp.com',    role: 'support' },
+    { name: 'Tech Mike',     email: 'technician@isp.com', role: 'technician' },
   ]
 
   for (const u of users) {
     const user = await prisma.user.upsert({
-      where:  { email: u.email },
+      where: { email: u.email },
       update: {},
-      create: { ...u, password, status: 'active' },
+      create: {
+        name: u.name,
+        email: u.email,
+        password,
+        role: u.role as any,
+        status: 'active',
+      },
     })
+    console.log(`  ✓ Created user: ${user.name} (${user.role})`)
 
-    // Give customer an active subscription on Standard plan
+    // Give customer an active subscription on Standard plan (50Mbps)
     if (u.role === 'customer') {
       const expiry = new Date()
-      expiry.setDate(expiry.getDate() + 30)
+      expiry.setDate(expiry.getDate() + 30) // 30 days from now
 
-      await prisma.subscription.upsert({
-        where:  { userId: user.id },
+      const sub = await prisma.subscription.upsert({
+        where: { userId: user.id },
         update: {},
         create: {
-          userId:     user.id,
-          planId:     createdPlans[1].id, // Standard 50Mbps
-          status:     'active',
+          userId: user.id,
+          planId: createdPlans[1].id, // Standard plan
+          status: 'active',
           expiryDate: expiry,
         },
       })
+      console.log(`    └─ Subscription: ${createdPlans[1].name} plan, expires ${expiry.toDateString()}`)
     }
   }
 
-  console.log('✅ Users seeded')
-  console.table(users.map((u) => ({ role: u.role, email: u.email, password: 'password' })))
+  console.log('\n✅ Database seeded successfully!')
 }
 
 main()
-  .catch(console.error)
+  .catch((e) => {
+    console.error('❌ Seeding failed:', e)
+    process.exit(1)
+  })
   .finally(() => prisma.$disconnect())
