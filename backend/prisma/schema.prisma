@@ -21,8 +21,17 @@ enum UserStatus {
 
 enum TicketStatus {
   open
+  ai_handling
+  waiting_human
   in_progress
   resolved
+  closed
+}
+
+enum SenderType {
+  customer
+  ai
+  support
 }
 
 enum SubscriptionStatus {
@@ -64,9 +73,9 @@ model User {
 
 model Plan {
   id            Int            @id @default(autoincrement())
-  name          String         // Basic, Pro, Premium Plus
-  speed         Int            // Mbps
-  price         Float          // Monthly price
+  name          String
+  speed         Int
+  price         Float
   description   String?
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
@@ -77,68 +86,70 @@ model Plan {
 }
 
 model Subscription {
-  id            Int                @id @default(autoincrement())
-  userId        Int                @unique
-  planId        Int
-  status        SubscriptionStatus @default(active)
-  expiryDate    DateTime
-  createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @updatedAt
+  id         Int                @id @default(autoincrement())
+  userId     Int                @unique
+  planId     Int
+  status     SubscriptionStatus @default(active)
+  expiryDate DateTime
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
 
-  user          User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  plan          Plan               @relation(fields: [planId], references: [id])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan Plan @relation(fields: [planId], references: [id])
 
   @@map("subscriptions")
 }
 
 model Payment {
-  id            Int           @id @default(autoincrement())
-  userId        Int
-  amount        Float
-  status        PaymentStatus @default(completed)
-  description   String?
-  createdAt     DateTime      @default(now())
+  id          Int           @id @default(autoincrement())
+  userId      Int
+  amount      Float
+  status      PaymentStatus @default(completed)
+  description String?
+  createdAt   DateTime      @default(now())
 
   @@map("payments")
 }
 
 model Ticket {
-  id            Int          @id @default(autoincrement())
-  userId        Int
-  subject       String
-  status        TicketStatus @default(open)
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  id        Int          @id @default(autoincrement())
+  userId    Int
+  subject   String
+  status    TicketStatus @default(ai_handling)
+  waitTime  Int?
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
 
-  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  messages      Message[]
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages Message[]
 
   @@map("tickets")
 }
 
 model Message {
-  id        Int      @id @default(autoincrement())
-  ticketId  Int
-  senderId  Int
-  message   String
-  createdAt DateTime @default(now())
+  id         Int        @id @default(autoincrement())
+  ticketId   Int
+  senderId   Int?
+  senderType SenderType @default(customer)
+  content    String
+  createdAt  DateTime   @default(now())
 
-  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
-  sender    User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  sender User?  @relation(fields: [senderId], references: [id], onDelete: Cascade)
 
   @@map("messages")
 }
 
 model Installation {
-  id            Int                @id @default(autoincrement())
-  userId        Int
-  technicianId  Int?
-  status        InstallationStatus @default(pending)
-  notes         String?
-  createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @updatedAt
+  id           Int                @id @default(autoincrement())
+  userId       Int
+  technicianId Int?
+  status       InstallationStatus @default(pending)
+  notes        String?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
 
-  user          User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("installations")
 }
