@@ -9,13 +9,25 @@ interface Ticket {
   subject: string
   status: string
   createdAt: string
-  messages: any[]
+  lastMessage?: string
 }
 
 const STATUS_STYLE: Record<string, string> = {
-  open:        'text-blue-400 bg-blue-400/10 border-blue-400/20',
-  in_progress: 'text-amber-400 bg-amber-400/10 border-amber-400/20',
-  resolved:    'text-emerald-400 bg-emerald-400/10 border-emerald-400/20',
+  open:          'text-blue-400   bg-blue-400/10   border-blue-400/20',
+  ai_handling:   'text-purple-400 bg-purple-400/10 border-purple-400/20',
+  waiting_human: 'text-amber-400  bg-amber-400/10  border-amber-400/20',
+  in_progress:   'text-amber-400  bg-amber-400/10  border-amber-400/20',
+  resolved:      'text-emerald-400 bg-emerald-400/10 border-emerald-400/20',
+  closed:        'text-white/30   bg-white/[0.04]  border-white/10',
+}
+
+const STATUS_LABEL: Record<string, string> = {
+  open:          'Open',
+  ai_handling:   'AI Handling',
+  waiting_human: 'Waiting for Agent',
+  in_progress:   'In Progress',
+  resolved:      'Resolved',
+  closed:        'Closed',
 }
 
 export default function CustomerSupportPage() {
@@ -35,7 +47,7 @@ export default function CustomerSupportPage() {
   const fetchTickets = async () => {
     setLoading(true)
     try {
-      const res = await api.get('/tickets/my')
+      const res = await api.get('/tickets')
       setTickets(res.data.tickets || [])
     } catch (err) {
       console.error('Failed to fetch tickets:', err)
@@ -46,7 +58,6 @@ export default function CustomerSupportPage() {
 
   const handleCreateTicket = async () => {
     if (!subject.trim() || !message.trim()) return
-
     setCreating(true)
     try {
       const res = await api.post('/tickets', {
@@ -57,6 +68,8 @@ export default function CustomerSupportPage() {
       setSubject('')
       setMessage('')
       setShowNewTicket(false)
+      // Navigate to the new ticket chat
+      router.push(`/dashboard/customer/support/${res.data.ticket.id}`)
     } catch (err) {
       console.error('Failed to create ticket:', err)
     } finally {
@@ -64,8 +77,8 @@ export default function CustomerSupportPage() {
     }
   }
 
-  const activeTickets = tickets.filter((t) => t.status !== 'resolved')
-  const closedTickets = tickets.filter((t) => t.status === 'resolved')
+  const activeTickets = tickets.filter((t) => !['resolved', 'closed'].includes(t.status))
+  const closedTickets = tickets.filter((t) => ['resolved', 'closed'].includes(t.status))
   const displayTickets = tab === 'active' ? activeTickets : closedTickets
 
   const formatDate = (date: string) =>
@@ -129,21 +142,18 @@ export default function CustomerSupportPage() {
             <button
               key={ticket.id}
               onClick={() => router.push(`/dashboard/customer/support/${ticket.id}`)}
-              className="w-full bg-white/[0.03] border border-white/[0.07] hover:border-white/[0.15] rounded-xl p-4 text-left transition-all"
+              className="w-full bg-white/[0.03] border border-white/[0.07] hover:border-white/20 rounded-xl p-4 text-left transition-all"
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
                   <h3 className="text-white font-medium mb-1 truncate">{ticket.subject}</h3>
-                  <p className="text-white/40 text-xs">
-                    Created {formatDate(ticket.createdAt)} · {ticket.messages?.length || 0} messages
-                  </p>
+                  {ticket.lastMessage && (
+                    <p className="text-white/30 text-xs truncate mb-1">{ticket.lastMessage}</p>
+                  )}
+                  <p className="text-white/30 text-xs">Created {formatDate(ticket.createdAt)}</p>
                 </div>
-                <span
-                  className={`text-[10px] font-bold uppercase px-3 py-1.5 rounded-full border flex-shrink-0 ${
-                    STATUS_STYLE[ticket.status]
-                  }`}
-                >
-                  {ticket.status.replace('_', ' ')}
+                <span className={`text-[10px] font-bold uppercase px-3 py-1.5 rounded-full border flex-shrink-0 ${STATUS_STYLE[ticket.status]}`}>
+                  {STATUS_LABEL[ticket.status] ?? ticket.status}
                 </span>
               </div>
             </button>
@@ -157,12 +167,7 @@ export default function CustomerSupportPage() {
           <div className="bg-[#0f0f1a] border border-white/10 rounded-2xl p-6 w-full max-w-md">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-white font-semibold text-lg">Create Support Ticket</h3>
-              <button
-                onClick={() => setShowNewTicket(false)}
-                className="text-white/30 hover:text-white/60 text-xl transition-all"
-              >
-                ✕
-              </button>
+              <button onClick={() => setShowNewTicket(false)} className="text-white/30 hover:text-white/60 text-xl">✕</button>
             </div>
 
             <div className="space-y-4 mb-6">
@@ -173,18 +178,17 @@ export default function CustomerSupportPage() {
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
                   placeholder="e.g., Connection issue, Billing question..."
-                  className="w-full bg-white/[0.05] border border-white/10 rounded-lg px-3 py-2 text-white placeholder-white/20 focus:border-blue-500 focus:outline-none"
+                  className="w-full bg-white/[0.05] border border-white/10 rounded-lg px-3 py-2.5 text-white placeholder-white/20 focus:border-blue-500 focus:outline-none text-sm"
                 />
               </div>
-
               <div>
-                <label className="block text-white/60 text-xs font-medium mb-2">Message</label>
+                <label className="block text-white/60 text-xs font-medium mb-2">Describe your issue</label>
                 <textarea
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
-                  placeholder="Describe your issue in detail..."
+                  placeholder="Tell us what's happening..."
                   rows={4}
-                  className="w-full bg-white/[0.05] border border-white/10 rounded-lg px-3 py-2 text-white placeholder-white/20 focus:border-blue-500 focus:outline-none resize-none"
+                  className="w-full bg-white/[0.05] border border-white/10 rounded-lg px-3 py-2.5 text-white placeholder-white/20 focus:border-blue-500 focus:outline-none resize-none text-sm"
                 />
               </div>
             </div>
@@ -192,20 +196,19 @@ export default function CustomerSupportPage() {
             <div className="flex gap-3">
               <button
                 onClick={() => setShowNewTicket(false)}
-                className="flex-1 bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-white/60 font-medium text-sm rounded-lg py-2 transition-all"
+                className="flex-1 bg-white/[0.04] border border-white/10 text-white/60 font-medium text-sm rounded-lg py-2.5 transition-all hover:bg-white/[0.08]"
               >
                 Cancel
               </button>
               <button
                 onClick={handleCreateTicket}
                 disabled={creating || !subject.trim() || !message.trim()}
-                className="flex-1 bg-blue-500 hover:bg-blue-600 disabled:opacity-60 text-white font-semibold text-sm rounded-lg py-2 flex items-center justify-center transition-all"
+                className="flex-1 bg-blue-500 hover:bg-blue-600 disabled:opacity-60 text-white font-semibold text-sm rounded-lg py-2.5 flex items-center justify-center transition-all"
               >
-                {creating ? (
-                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                ) : (
-                  'Create Ticket'
-                )}
+                {creating
+                  ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  : 'Create Ticket'
+                }
               </button>
             </div>
           </div>
