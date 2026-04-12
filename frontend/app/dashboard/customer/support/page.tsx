@@ -69,7 +69,7 @@ export default function CustomerSupportPage() {
   const displayTickets = tab === 'active' ? activeTickets : closedTickets
 
   const formatDate = (date: string) =>
-    new Date(date).toLocaleDateString('en-NG', { day: 'short', month: 'short', year: '2-digit' })
+    new Date(date).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: '2-digit' })
 
   return (
     <div className="flex flex-col gap-6 max-w-4xl">
