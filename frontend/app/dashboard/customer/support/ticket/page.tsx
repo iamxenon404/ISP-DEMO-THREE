@@ -72,7 +72,7 @@ export default function TicketDetailPage() {
 
   const formatDate = (date: string) => {
     const d = new Date(date)
-    return d.toLocaleDateString('en-NG', { day: 'short', month: 'short', year: '2-digit' })
+    return d.toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: '2-digit' })
   }
 
   const formatTime = (date: string) => {
