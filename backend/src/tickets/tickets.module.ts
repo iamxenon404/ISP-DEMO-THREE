@@ -2,8 +2,9 @@
 
 import { Module } from '@nestjs/common'
 import { TicketsController } from './tickets.controller'
-import { TicketsService } from './tickets.service'
+// import { TicketsService } from './tickets.service'
 import { TicketsGateway } from './tickets.gateway'
+import { TicketsService } from './tickets.service'
 
 @Module({
   controllers: [TicketsController],
