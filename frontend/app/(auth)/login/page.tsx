@@ -32,7 +32,7 @@ export default function LoginPage() {
       saveAuth(data.token, data.user)
       document.cookie = `auth_token=${data.token}; path=/`
       document.cookie = `auth_role=${data.user.role}; path=/`
-      window.location.href = data.user.dashboard
+      router.push(data.user.dashboard)
     } catch (err: any) {
       setError(
         err?.response?.data?.errors?.email?.[0] ||
