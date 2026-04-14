@@ -10,7 +10,7 @@ const DEMO_ACCOUNTS = [
   { role: 'Customer',   email: 'customer@isp.com'   },
   { role: 'Support',    email: 'support@isp.com'    },
   { role: 'Tech',       email: 'technician@isp.com' },
-]
+] 
 
 export default function LoginPage() {
   const router = useRouter()
@@ -32,7 +32,7 @@ export default function LoginPage() {
       saveAuth(data.token, data.user)
       document.cookie = `auth_token=${data.token}; path=/`
       document.cookie = `auth_role=${data.user.role}; path=/`
-      router.push(data.user.dashboard)
+      window.location.href = data.user.dashboard
     } catch (err: any) {
       setError(
         err?.response?.data?.errors?.email?.[0] ||
