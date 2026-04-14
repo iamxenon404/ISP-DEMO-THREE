@@ -30,9 +30,17 @@ export function clearAuth() {
 
 export function getStoredUser(): AuthUser | null {
   if (typeof window === 'undefined') return null
+  // Try localStorage
   const raw = localStorage.getItem('auth_user')
-  if (!raw) return null
-  try { return JSON.parse(raw) as AuthUser } catch { return null }
+  if (raw) {
+    try { return JSON.parse(raw) as AuthUser } catch { }
+  }
+  // Fallback: read role from cookie and build minimal user
+  const roleMatch = document.cookie.match(/auth_role=([^;]+)/)
+  if (roleMatch) {
+    return { id: 0, name: '', email: '', role: roleMatch[1] as Role, status: 'active', dashboard: `/dashboard/${roleMatch[1]}` }
+  }
+  return null
 }
 
 export function isLoggedIn(): boolean {
