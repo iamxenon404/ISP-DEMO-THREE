@@ -12,6 +12,7 @@ const ROLE_PATHS: Record<string, string> = {
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
+  // Allow public paths
   if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) {
     return NextResponse.next()
   }
@@ -19,21 +20,22 @@ export function proxy(request: NextRequest) {
   const token = request.cookies.get('auth_token')?.value
   const role  = request.cookies.get('auth_role')?.value
 
+  // No token = redirect to login
   if (!token) {
     const url = new URL('/login', request.url)
     url.searchParams.set('from', pathname)
     return NextResponse.redirect(url)
   }
 
+  // If just /dashboard, redirect to their role dashboard
   if (pathname === '/dashboard' || pathname === '/dashboard/') {
-    return NextResponse.redirect(new URL(ROLE_PATHS[role ?? ''] ?? '/login', request.url))
+    const homeRoute = ROLE_PATHS[role ?? 'customer']
+    return NextResponse.redirect(new URL(homeRoute, request.url))
   }
 
-  if (pathname.startsWith('/dashboard/') && role) {
-    const correct = ROLE_PATHS[role]
-    if (correct && !pathname.startsWith(correct)) {
-      return NextResponse.redirect(new URL(correct, request.url))
-    }
+  // Allow all /dashboard/* paths if they have a token
+  if (pathname.startsWith('/dashboard/')) {
+    return NextResponse.next()
   }
 
   return NextResponse.next()
