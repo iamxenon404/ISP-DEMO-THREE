@@ -11,12 +11,11 @@ interface Ticket {
   status: string
   createdAt: string
   updatedAt: string
-  lastMessage?: string
   user: { id: number; name: string; email: string }
 }
 
 const STATUS_MAP: Record<string, { label: string; style: string }> = {
-  open:          { label: 'Open',            style: 'text-blue-400   bg-blue-400/10   border-blue-400/20'   },
+  open:          { label: 'Open',            style: 'text-blue-400    bg-blue-400/10    border-blue-400/20'   },
   ai_handling:   { label: 'AI Handling',     style: 'text-purple-400 bg-purple-400/10 border-purple-400/20' },
   waiting_human: { label: 'Waiting',         style: 'text-amber-400  bg-amber-400/10  border-amber-400/20'  },
   in_progress:   { label: 'In Progress',     style: 'text-amber-400  bg-amber-400/10  border-amber-400/20'  },
@@ -26,22 +25,25 @@ const STATUS_MAP: Record<string, { label: string; style: string }> = {
 
 const FILTERS = ['all', 'waiting_human', 'in_progress', 'open', 'resolved']
 const FILTER_LABELS: Record<string, string> = {
-  all:           'All',
+  all: 'All',
   waiting_human: 'Waiting',
-  in_progress:   'In Progress',
-  open:          'Open',
-  resolved:      'Resolved',
+  in_progress: 'In Progress',
+  open: 'Open',
+  resolved: 'Resolved',
 }
 
 export default function SupportOverview() {
-  const user   = getStoredUser()
   const router = useRouter()
-
-  const [tickets,    setTickets]    = useState<Ticket[]>([])
-  const [loading,    setLoading]    = useState(true)
-  const [filter,     setFilter]     = useState('all')
+  const [userName, setUserName] = useState('') // Fix for Hydration
+  const [tickets, setTickets] = useState<Ticket[]>([])
+  const [loading, setLoading] = useState(true)
+  const [filter, setFilter] = useState('all')
 
   useEffect(() => {
+    // Hydration Fix: Fetch user data only on client
+    const user = getStoredUser()
+    if (user?.name) setUserName(user.name.split(' ')[0])
+
     fetchTickets()
     const interval = setInterval(fetchTickets, 5000)
     return () => clearInterval(interval)
@@ -50,9 +52,12 @@ export default function SupportOverview() {
   const fetchTickets = async () => {
     try {
       const res = await api.get('/tickets')
-      setTickets(res.data.tickets || [])
+      // Safety fix: ensure tickets is always an array
+      const data = Array.isArray(res.data) ? res.data : (res.data.tickets || [])
+      setTickets(data)
     } catch (err) {
       console.error(err)
+      setTickets([])
     } finally {
       setLoading(false)
     }
@@ -81,11 +86,10 @@ export default function SupportOverview() {
 
   return (
     <div className="flex flex-col gap-8">
-      {/* Header */}
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-white text-2xl font-semibold tracking-tight mb-1">Support dashboard</h1>
-          <p className="text-white/35 text-sm">Welcome back, {user?.name?.split(' ')[0]}. Here&apos;s your queue.</p>
+          <p className="text-white/35 text-sm">Welcome back, {userName || 'Agent'}. Here&apos;s your queue.</p>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
@@ -93,7 +97,6 @@ export default function SupportOverview() {
         </div>
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((s) => (
           <div key={s.label} className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-5 flex flex-col gap-2">
@@ -103,7 +106,6 @@ export default function SupportOverview() {
         ))}
       </div>
 
-      {/* Ticket queue */}
       <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-6">
         <div className="flex items-center justify-between mb-5">
           <h3 className="text-white font-semibold text-[15px]">Ticket queue</h3>
@@ -137,10 +139,7 @@ export default function SupportOverview() {
             {filtered.map((t) => {
               const s = STATUS_MAP[t.status] ?? STATUS_MAP.open
               return (
-                <div
-                  key={t.id}
-                  className="flex items-center gap-4 bg-white/[0.02] hover:bg-white/[0.04] border border-white/[0.05] rounded-xl px-4 py-3.5 transition-all"
-                >
+                <div key={t.id} className="flex items-center gap-4 bg-white/[0.02] hover:bg-white/[0.04] border border-white/[0.05] rounded-xl px-4 py-3.5 transition-all">
                   <span className="text-white/20 text-[11px] font-bold font-mono w-10 flex-shrink-0">#{t.id}</span>
                   <div className="flex-1 flex flex-col gap-0.5 min-w-0">
                     <span className="text-white/80 text-[13px] font-medium truncate">{t.subject}</span>
