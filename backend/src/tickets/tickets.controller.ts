@@ -13,7 +13,6 @@ import {
   ParseIntPipe,
 } from '@nestjs/common'
 import { AuthGuard } from '@nestjs/passport'
-// import { TicketsService } from './tickets.service'
 import { CreateTicketDto } from './dto/create-ticket.dto'
 import { SendMessageDto } from './dto/send-message.dto'
 import { TicketsService } from './tickets.service'
@@ -22,6 +21,15 @@ import { TicketsService } from './tickets.service'
 @UseGuards(AuthGuard('jwt'))
 export class TicketsController {
   constructor(private ticketsService: TicketsService) {}
+
+  /**
+   * GET /api/tickets/my
+   * Get current user's tickets — MUST BE FIRST (specific route)
+   */
+  @Get('my')
+  getMyTickets(@Request() req: any, @Query('status') status?: string) {
+    return this.ticketsService.getTickets(req.user.id, req.user.role, status)
+  }
 
   /**
    * POST /api/tickets
@@ -34,7 +42,7 @@ export class TicketsController {
 
   /**
    * GET /api/tickets
-   * List tickets — customers see own, support/admin see all
+   * List all tickets — customers see own, support/admin see all
    */
   @Get()
   findAll(@Request() req: any, @Query('status') status?: string) {
