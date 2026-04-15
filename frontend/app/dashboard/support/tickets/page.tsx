@@ -32,7 +32,6 @@ export default function SupportQueuePage() {
 
   useEffect(() => {
     fetchTickets()
-    // Refresh the queue every 10 seconds to catch new tickets
     const interval = setInterval(fetchTickets, 10000)
     return () => clearInterval(interval)
   }, [])
@@ -40,9 +39,12 @@ export default function SupportQueuePage() {
   const fetchTickets = async () => {
     try {
       const res = await api.get('/tickets')
-      setTickets(res.data)
+      // Fix for .map error: handle both {tickets: []} and []
+      const data = Array.isArray(res.data) ? res.data : (res.data.tickets || [])
+      setTickets(data)
     } catch (err) {
       console.error("Failed to load tickets", err)
+      setTickets([]) 
     } finally {
       setLoading(false)
     }
@@ -91,18 +93,15 @@ export default function SupportQueuePage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-white/[0.05]">
-            {filteredTickets.map((ticket) => (
-              <tr 
-                key={ticket.id} 
-                className="hover:bg-white/[0.02] transition-colors group"
-              >
+            {(filteredTickets || []).map((ticket) => (
+              <tr key={ticket.id} className="hover:bg-white/[0.02] transition-colors group">
                 <td className="px-6 py-4">
                   <p className="text-white font-medium text-sm">{ticket.subject}</p>
                   <p className="text-white/30 text-xs mt-0.5">#{ticket.id}</p>
                 </td>
-                <td className="px-6 py-4">
-                  <p className="text-white/80 text-sm">{ticket.user.name}</p>
-                  <p className="text-white/30 text-xs">{ticket.user.email}</p>
+                <td className="px-6 py-4 text-sm">
+                  <p className="text-white/80">{ticket.user?.name || 'Unknown'}</p>
+                  <p className="text-white/30 text-xs">{ticket.user?.email || ''}</p>
                 </td>
                 <td className="px-6 py-4">
                   <span className={`px-2.5 py-1 rounded-lg border text-[10px] font-bold uppercase tracking-tight ${STATUS_COLORS[ticket.status] || 'text-white/40 bg-white/5 border-white/10'}`}>
