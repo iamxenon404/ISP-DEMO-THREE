@@ -182,15 +182,64 @@ export class AdminService {
   // ─── Create installation + assign technician directly ─────
 
   async assignDirect(userId: number, technicianId: number, notes?: string) {
-    const installation = await this.prisma.installation.create({
-      data: {
+    // Check user exists
+    const user = await this.prisma.user.findUnique({ where: { id: userId } })
+    if (!user) throw new NotFoundException('User not found.')
+
+    // Check technician exists
+    const tech = await this.prisma.user.findUnique({ where: { id: technicianId, role: 'technician' } as any })
+    if (!tech) throw new NotFoundException('Technician not found.')
+
+    // Check if there's already a pending/assigned installation for this user
+    const existing = await this.prisma.installation.findFirst({
+      where: {
         userId,
-        technicianId,
-        status: 'assigned',
-        notes:  notes ?? null,
+        status: { in: ['pending', 'assigned', 'in_progress'] },
       },
-      include: { user: { select: { id: true, name: true, email: true } } },
     })
+
+    let installation: any
+
+    if (existing) {
+      // Update existing installation
+      installation = await this.prisma.installation.update({
+        where: { id: existing.id },
+        data:  { technicianId, status: 'assigned', notes: notes ?? existing.notes },
+        include: {
+          user:       { select: { id: true, name: true, email: true } },
+          technician: { select: { id: true, name: true, email: true } },
+        },
+      })
+    } else {
+      // Create new installation
+      installation = await this.prisma.installation.create({
+        data: {
+          userId,
+          technicianId,
+          status: 'assigned',
+          notes:  notes ?? null,
+        },
+        include: {
+          user:       { select: { id: true, name: true, email: true } },
+          technician: { select: { id: true, name: true, email: true } },
+        },
+      })
+    }
+
     return { message: 'Technician assigned successfully.', installation }
+  }
+
+  // ─── Get customer's installation ──────────────────────────
+
+  async getMyInstallation(userId: number) {
+    const installation = await this.prisma.installation.findFirst({
+      where:   { userId },
+      include: {
+        technician: { select: { id: true, name: true, email: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    })
+
+    return { installation }
   }
 }
