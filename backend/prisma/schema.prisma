@@ -4,6 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 enum Role {
@@ -66,7 +67,10 @@ model User {
   subscription  Subscription?
   tickets       Ticket[]
   messages      Message[]
-  installations Installation[]
+  
+  // Relations for Installation
+  installations Installation[] @relation("CustomerInstallations")
+  assignedJobs  Installation[] @relation("TechnicianJobs")
 
   @@map("users")
 }
@@ -149,7 +153,9 @@ model Installation {
   createdAt    DateTime           @default(now())
   updatedAt    DateTime           @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Named relations to the User model
+  user       User  @relation("CustomerInstallations", fields: [userId], references: [id], onDelete: Cascade)
+  technician User? @relation("TechnicianJobs", fields: [technicianId], references: [id])
 
   @@map("installations")
 }
