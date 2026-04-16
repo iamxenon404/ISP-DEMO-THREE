@@ -32,22 +32,22 @@ const ROLE_STYLE: Record<string, string> = {
 
 const STATUS_STYLE: Record<string, string> = {
   active:    'text-emerald-400 bg-emerald-400/10 border-emerald-400/20',
-  suspended: 'text-red-400    bg-red-400/10    border-red-400/20',
-  pending:   'text-amber-400  bg-amber-400/10  border-amber-400/20',
+  suspended: 'text-red-400     bg-red-400/10     border-red-400/20',
+  pending:   'text-amber-400   bg-amber-400/10   border-amber-400/20',
 }
 
 const ROLE_FILTERS = ['all', 'customer', 'support', 'technician', 'admin']
 
 export default function AdminUsersPage() {
-  const [users,       setUsers]       = useState<User[]>([])
+  const [users, setUsers] = useState<User[]>([])
   const [technicians, setTechnicians] = useState<Technician[]>([])
-  const [loading,     setLoading]     = useState(true)
-  const [roleFilter,  setRoleFilter]  = useState('all')
-  const [updating,    setUpdating]    = useState<number | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [roleFilter, setRoleFilter] = useState('all')
+  const [updating, setUpdating] = useState<number | null>(null)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
-  const [assignModal,  setAssignModal]  = useState(false)
+  const [assignModal, setAssignModal] = useState(false)
   const [selectedTech, setSelectedTech] = useState<number | null>(null)
-  const [assigning,    setAssigning]    = useState(false)
+  const [assigning, setAssigning] = useState(false)
 
   useEffect(() => {
     fetchData()
@@ -59,8 +59,8 @@ export default function AdminUsersPage() {
         api.get('/admin/users'),
         api.get('/admin/technicians'),
       ])
-      setUsers(usersRes.data.users)
-      setTechnicians(techsRes.data.technicians)
+      setUsers(usersRes.data.users || [])
+      setTechnicians(techsRes.data.technicians || [])
     } catch (err) {
       console.error(err)
     } finally {
@@ -84,16 +84,21 @@ export default function AdminUsersPage() {
     if (!selectedUser || !selectedTech) return
     setAssigning(true)
     try {
-      // Create installation then assign
       await api.post('/admin/installations/assign-direct', {
-        userId:      selectedUser.id,
+        userId: selectedUser.id,
         technicianId: selectedTech,
       })
+      
+      // Close and clear
       setAssignModal(false)
       setSelectedUser(null)
       setSelectedTech(null)
+      
+      // Refresh the list to show any updated status
+      fetchData()
     } catch (err) {
-      console.error(err)
+      console.error("Assignment failed", err)
+      alert("Could not assign technician. Check if an installation already exists.")
     } finally {
       setAssigning(false)
     }
@@ -108,13 +113,11 @@ export default function AdminUsersPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Header */}
       <div>
         <h1 className="text-white text-2xl font-semibold tracking-tight mb-1">User management</h1>
         <p className="text-white/35 text-sm">Manage all users, roles and access.</p>
       </div>
 
-      {/* Filters */}
       <div className="flex gap-2 flex-wrap">
         {ROLE_FILTERS.map((f) => (
           <button
@@ -131,7 +134,6 @@ export default function AdminUsersPage() {
         ))}
       </div>
 
-      {/* Table */}
       <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center h-40">
@@ -173,30 +175,24 @@ export default function AdminUsersPage() {
                   </td>
                   <td className="px-5 py-4">
                     <div className="flex gap-2">
-                      {u.status !== 'active' && (
-                        <button
-                          onClick={() => handleStatusChange(u.id, 'active')}
-                          disabled={updating === u.id}
-                          className="text-emerald-400 bg-emerald-400/10 hover:bg-emerald-400/20 border border-emerald-400/20 text-[11px] font-semibold px-2.5 py-1.5 rounded-lg transition-all disabled:opacity-50"
-                        >
-                          Activate
-                        </button>
-                      )}
-                      {u.status !== 'suspended' && (
-                        <button
-                          onClick={() => handleStatusChange(u.id, 'suspended')}
-                          disabled={updating === u.id}
-                          className="text-red-400 bg-red-400/10 hover:bg-red-400/20 border border-red-400/20 text-[11px] font-semibold px-2.5 py-1.5 rounded-lg transition-all disabled:opacity-50"
-                        >
-                          Suspend
-                        </button>
-                      )}
+                      <button
+                        onClick={() => handleStatusChange(u.id, u.status === 'active' ? 'suspended' : 'active')}
+                        disabled={updating === u.id}
+                        className={`text-[11px] font-semibold px-2.5 py-1.5 rounded-lg border transition-all disabled:opacity-50 ${
+                          u.status === 'active' 
+                            ? 'text-red-400 bg-red-400/10 border-red-400/20 hover:bg-red-400/20' 
+                            : 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20 hover:bg-emerald-400/20'
+                        }`}
+                      >
+                        {u.status === 'active' ? 'Suspend' : 'Activate'}
+                      </button>
+                      
                       {u.role === 'customer' && (
                         <button
                           onClick={() => { setSelectedUser(u); setAssignModal(true) }}
                           className="text-blue-400 bg-blue-400/10 hover:bg-blue-400/20 border border-blue-400/20 text-[11px] font-semibold px-2.5 py-1.5 rounded-lg transition-all"
                         >
-                          Assign tech
+                          Assign Tech
                         </button>
                       )}
                     </div>
@@ -211,17 +207,17 @@ export default function AdminUsersPage() {
       {/* Assign Technician Modal */}
       {assignModal && selectedUser && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-[#0f0f1a] border border-white/10 rounded-2xl p-6 w-full max-w-md">
+          <div className="bg-[#0f0f1a] border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-white font-semibold text-lg">Assign Technician</h3>
-              <button onClick={() => setAssignModal(false)} className="text-white/30 hover:text-white/60 text-xl">✕</button>
+              <button onClick={() => setAssignModal(false)} className="text-white/30 hover:text-white/60">✕</button>
             </div>
 
             <p className="text-white/50 text-sm mb-5">
               Assigning a technician to <span className="text-white font-medium">{selectedUser.name}</span>
             </p>
 
-            <div className="flex flex-col gap-2 mb-6">
+            <div className="flex flex-col gap-2 mb-6 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
               {technicians.length === 0 ? (
                 <p className="text-white/30 text-sm text-center py-4">No active technicians available</p>
               ) : technicians.map((t) => (
@@ -235,11 +231,11 @@ export default function AdminUsersPage() {
                   }`}
                 >
                   <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-[11px] font-bold flex-shrink-0 ${selectedTech === t.id ? 'bg-emerald-400/20 text-emerald-400' : 'bg-white/[0.06] text-white/40'}`}>
-                    {t.name.split(' ').map((n) => n[0]).join('').slice(0, 2)}
+                    {t.name.split(' ').map((n) => n[0]).join('').toUpperCase()}
                   </div>
-                  <div>
-                    <p className="text-white/85 text-sm font-medium">{t.name}</p>
-                    <p className="text-white/30 text-xs">{t.email}</p>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white/85 text-sm font-medium truncate">{t.name}</p>
+                    <p className="text-white/30 text-xs truncate">{t.email}</p>
                   </div>
                 </button>
               ))}
@@ -257,10 +253,7 @@ export default function AdminUsersPage() {
                 disabled={!selectedTech || assigning}
                 className="flex-1 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-60 text-white font-semibold text-sm rounded-lg py-2.5 flex items-center justify-center transition-all"
               >
-                {assigning
-                  ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  : 'Assign'
-                }
+                {assigning ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Assign Now'}
               </button>
             </div>
           </div>
