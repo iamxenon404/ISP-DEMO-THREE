@@ -226,37 +226,6 @@ export class AdminService {
   return { message: 'Technician assigned successfully.', installation }
 }
 
-    let installation: any
-
-    if (existing) {
-      // Update existing installation
-      installation = await this.prisma.installation.update({
-        where: { id: existing.id },
-        data:  { technicianId, status: 'assigned', notes: notes ?? existing.notes },
-        include: {
-          user:       { select: { id: true, name: true, email: true } },
-          technician: { select: { id: true, name: true, email: true } },
-        },
-      })
-    } else {
-      // Create new installation
-      installation = await this.prisma.installation.create({
-        data: {
-          userId,
-          technicianId,
-          status: 'assigned',
-          notes:  notes ?? null,
-        },
-        include: {
-          user:       { select: { id: true, name: true, email: true } },
-          technician: { select: { id: true, name: true, email: true } },
-        },
-      })
-    }
-
-    return { message: 'Technician assigned successfully.', installation }
-  }
-
   // ─── Get customer's installation ──────────────────────────
 
   async getMyInstallation(userId: number) {
