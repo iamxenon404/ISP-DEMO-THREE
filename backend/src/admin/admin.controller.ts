@@ -80,10 +80,14 @@ export class AdminController {
   }
 
   // POST /api/admin/installations/assign-direct
-  @Post('installations/assign-direct')
-  assignDirect(@Body() body: { userId: number; technicianId: number; notes?: string }) {
-    return this.adminService.assignDirect(body.userId, body.technicianId, body.notes)
-  }
+@Post('installations/assign-direct')
+assignDirect(@Body() body: { userId: number; technicianId: number; notes?: string }) {
+  return this.adminService.assignDirect(
+    Number(body.userId),
+    Number(body.technicianId),
+    body.notes,
+  )
+}
 
   // GET /api/admin/installations/my/:userId
   @Get('installations/my/:userId')
