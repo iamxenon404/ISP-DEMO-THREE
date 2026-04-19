@@ -21,7 +21,7 @@ const STEPS = [
   { key: 'pending',     label: 'Pending',      desc: 'Your installation request has been received.'         },
   { key: 'assigned',    label: 'Tech Assigned', desc: 'A technician has been assigned to your installation.' },
   { key: 'in_progress', label: 'In Progress',   desc: 'Your technician is on the way or working on site.'   },
-  { key: 'completed',   label: 'Completed',     desc: 'Your installation is complete. You\'re all set!'      },
+  { key: 'completed',   label: 'Completed',     desc: "Your installation is complete. You're all set!"       },
 ]
 
 const STEP_INDEX: Record<string, number> = {
@@ -32,15 +32,21 @@ const STEP_INDEX: Record<string, number> = {
 }
 
 export default function InstallationPage() {
-  const user = getStoredUser()
+  const [user,         setUser]         = useState<any>(null)
   const [installation, setInstallation] = useState<Installation | null>(null)
   const [loading,      setLoading]      = useState(true)
 
   useEffect(() => {
-    fetchInstallation()
-    const interval = setInterval(fetchInstallation, 10000) // poll every 10s
-    return () => clearInterval(interval)
+    const u = getStoredUser()
+    setUser(u)
   }, [])
+
+  useEffect(() => {
+    if (!user?.id) return
+    fetchInstallation()
+    const interval = setInterval(fetchInstallation, 10000)
+    return () => clearInterval(interval)
+  }, [user])
 
   const fetchInstallation = async () => {
     try {
@@ -53,7 +59,7 @@ export default function InstallationPage() {
     }
   }
 
-  const currentStep = installation ? STEP_INDEX[installation.status] ?? 0 : -1
+  const currentStep = installation ? (STEP_INDEX[installation.status] ?? 0) : -1
 
   const formatDate = (date: string) =>
     new Date(date).toLocaleDateString('en-NG', { day: 'numeric', month: 'long', year: 'numeric' })
@@ -77,7 +83,6 @@ export default function InstallationPage() {
         </div>
       ) : (
         <>
-          {/* Status banner */}
           {installation.status === 'assigned' && (
             <div className="bg-blue-500/10 border border-blue-500/25 rounded-2xl p-5 flex items-start gap-4">
               <span className="text-2xl">🚀</span>
@@ -112,18 +117,15 @@ export default function InstallationPage() {
             </div>
           )}
 
-          {/* Progress stepper */}
           <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-6">
             <h3 className="text-white font-semibold text-[15px] mb-6">Installation progress</h3>
             <div className="flex flex-col gap-0">
               {STEPS.map((step, index) => {
                 const isCompleted = index < currentStep
                 const isCurrent   = index === currentStep
-                const isPending   = index > currentStep
 
                 return (
                   <div key={step.key} className="flex gap-4">
-                    {/* Line + dot */}
                     <div className="flex flex-col items-center">
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold transition-all ${
                         isCompleted ? 'bg-emerald-400 text-black' :
@@ -137,13 +139,16 @@ export default function InstallationPage() {
                       )}
                     </div>
 
-                    {/* Content */}
                     <div className={`pb-6 flex-1 ${index === STEPS.length - 1 ? 'pb-0' : ''}`}>
                       <p className={`font-semibold text-sm mb-0.5 ${
                         isCurrent ? 'text-white' : isCompleted ? 'text-white/60' : 'text-white/25'
                       }`}>
                         {step.label}
-                        {isCurrent && <span className="ml-2 text-[10px] font-bold text-blue-400 bg-blue-400/10 border border-blue-400/20 px-2 py-0.5 rounded-full uppercase tracking-wider">Current</span>}
+                        {isCurrent && (
+                          <span className="ml-2 text-[10px] font-bold text-blue-400 bg-blue-400/10 border border-blue-400/20 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                            Current
+                          </span>
+                        )}
                       </p>
                       <p className={`text-xs leading-relaxed ${isCurrent ? 'text-white/50' : 'text-white/20'}`}>
                         {step.desc}
@@ -155,7 +160,6 @@ export default function InstallationPage() {
             </div>
           </div>
 
-          {/* Technician info */}
           {installation.technician && (
             <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-6">
               <h3 className="text-white font-semibold text-[15px] mb-4">Your technician</h3>
@@ -177,7 +181,6 @@ export default function InstallationPage() {
             </div>
           )}
 
-          {/* Meta */}
           <div className="text-white/20 text-xs">
             Installation created {formatDate(installation.createdAt)} · Last updated {formatDate(installation.updatedAt)}
           </div>
