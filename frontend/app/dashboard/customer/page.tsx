@@ -4,152 +4,164 @@ import { useEffect, useState } from 'react'
 import { getStoredUser } from '@/lib/auth'
 import api from '@/lib/api'
 
-const tickets = [
+interface Installation {
+  id: number
+  status: 'pending' | 'assigned' | 'in_progress' | 'completed'
+  notes?: string
+  technician?: { name: string; email: string } | null
+}
+
+const TICKETS = [
   { subject: 'Connection dropping at night', date: '2 days ago', status: 'In Progress' },
-  { subject: 'Speed slower than plan',       date: '1 week ago', status: 'Resolved'    },
+  { subject: 'Speed slower than plan', date: '1 week ago', status: 'Resolved' },
 ]
 
 const STATUS_STYLE: Record<string, string> = {
-  'In Progress': 'text-amber-400 bg-amber-400/10 border-amber-400/20',
-  'Resolved':    'text-white/30  bg-white/[0.04] border-white/10',
-  'Open':        'text-blue-400  bg-blue-400/10  border-blue-400/20',
+  'In Progress': 'text-amber-600 bg-amber-50 border-amber-200/50',
+  'Resolved': 'text-gray-400 bg-gray-50 border-gray-200',
+  'Open': 'text-blue-600 bg-blue-50 border-blue-200/50',
 }
 
 export default function CustomerOverview() {
   const [user, setUser] = useState<any>(null)
   const [sub, setSub] = useState<any>(null)
+  const [installation, setInstallation] = useState<Installation | null>(null)
   const [mounted, setMounted] = useState(false)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const userData = getStoredUser()
-    setUser(userData)
+    setUser(getStoredUser())
     setMounted(true)
   }, [])
 
   useEffect(() => {
     if (!mounted) return
-
-    const fetchSub = async () => {
+    const fetchData = async () => {
       try {
-        const res = await api.get('/subscriptions/my')
-        setSub(res.data.subscription)
+        const [subRes, instRes] = await Promise.all([
+          api.get('/subscriptions/my'),
+          api.get(`/admin/installations/my/${getStoredUser()?.id}`)
+        ])
+        setSub(subRes.data.subscription)
+        setInstallation(instRes.data.installation)
       } catch (err) {
-        console.error('Failed to fetch subscription:', err)
+        console.error('System Data Fetch Failure', err)
       } finally {
         setLoading(false)
       }
     }
-
-    fetchSub()
+    fetchData()
   }, [mounted])
 
-  if (!mounted || loading) {
-    return (
-      <div className="flex flex-col gap-8">
-        <div>
-          <h1 className="text-white text-2xl font-semibold tracking-tight mb-1">Good morning 👋</h1>
-          <p className="text-white/35 text-sm">Loading your account...</p>
-        </div>
-      </div>
-    )
-  }
+  if (!mounted || loading) return (
+    <div className="flex items-center justify-center min-h-[400px]">
+      <div className="w-8 h-8 border-2 border-gray-200 border-t-blue-600 rounded-full animate-spin" />
+    </div>
+  )
 
-  const formatDate = (date: string) =>
-    new Date(date).toLocaleDateString('en-NG', { day: 'numeric', month: 'long', year: 'numeric' })
-
-  const formatPrice = (price: number) =>
-    `₦${price.toLocaleString()}`
-
-  const stats = [
-    { label: 'Current Plan',  value: sub?.plan?.name || 'N/A', sub: 'Active', color: 'text-blue-400' },
-    { label: 'Speed',         value: `${sub?.plan?.speed || 0}Mbps`, sub: 'Download', color: 'text-emerald-400' },
-    { label: 'Days Left',     value: `${sub?.daysLeft || 0}`, sub: 'Until expiry', color: 'text-amber-400' },
-    { label: 'Monthly Price', value: formatPrice(sub?.plan?.price || 0), sub: 'Recurring', color: 'text-purple-400' },
-  ]
+  const formatPrice = (price: number) => `₦${(price || 0).toLocaleString()}`
+  const formatDate = (date: string) => new Date(date).toLocaleDateString('en-NG', { day: 'numeric', month: 'long', year: 'numeric' })
 
   return (
-    <div className="flex flex-col gap-8">
-      {/* Header */}
-      <div className="flex items-start justify-between">
+    <div className="max-w-[1200px] mx-auto space-y-8 pb-12 text-gray-900">
+      
+      {/* Header section */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-gray-100 pb-6">
         <div>
-          <h1 className="text-white text-2xl font-semibold tracking-tight mb-1">
-            Good morning, {user?.name?.split(' ')[0] ?? 'there'} 👋
+          <h1 className="text-2xl font-bold tracking-tight text-gray-900">
+            Account Overview
           </h1>
-          <p className="text-white/35 text-sm">Here&apos;s a summary of your account.</p>
+          <p className="text-gray-400 text-xs font-medium uppercase tracking-[0.15em] mt-1">
+            Session: {user?.name?.split(' ')[0] || 'User'} // Status: Verified
+          </p>
         </div>
-        <span className={`text-xs font-semibold px-3 py-1.5 rounded-full ${
-          sub?.status === 'active'
-            ? 'text-emerald-400 bg-emerald-400/10 border border-emerald-400/20'
-            : 'text-red-400 bg-red-400/10 border border-red-400/20'
+        <div className={`text-[10px] font-bold px-3 py-1 rounded-full border tracking-widest uppercase ${
+          sub?.status === 'active' ? 'bg-emerald-50 border-emerald-100 text-emerald-600' : 'bg-red-50 border-red-100 text-red-600'
         }`}>
-          ● {sub?.status?.toUpperCase() || 'UNKNOWN'}
-        </span>
+          ● {sub?.status || 'OFFLINE'}
+        </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((s) => (
-          <div key={s.label} className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-5 flex flex-col gap-2">
-            <span className="text-white/35 text-xs font-medium">{s.label}</span>
-            <span className={`text-2xl font-bold tracking-tight ${s.color}`}>{s.value}</span>
-            <span className="text-white/30 text-xs">{s.sub}</span>
+      {/* Installation Tracker (Only active if not completed) */}
+      {installation && installation.status !== 'completed' && (
+        <div className="bg-blue-600 rounded-2xl p-6 md:p-8 text-white relative overflow-hidden shadow-lg shadow-blue-200">
+          <div className="relative z-10">
+            <p className="text-blue-100 text-[10px] font-black uppercase tracking-[0.2em] mb-4">Service Deployment</p>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+              <div>
+                <h2 className="text-2xl font-bold tracking-tight mb-2">Installation in progress</h2>
+                <p className="text-blue-100/70 text-sm max-w-sm leading-relaxed">
+                  Technician {installation.technician?.name || 'assignment pending'} is synchronizing your local terminal.
+                </p>
+              </div>
+              <div className="flex flex-col gap-2 min-w-[200px]">
+                <div className="flex justify-between text-[10px] font-bold uppercase tracking-tighter">
+                  <span>Progress</span>
+                  <span>{installation.status.replace('_', ' ')}</span>
+                </div>
+                <div className="h-1 w-full bg-white/20 rounded-full">
+                  <div 
+                    className="h-full bg-white rounded-full transition-all duration-1000" 
+                    style={{ width: installation.status === 'pending' ? '25%' : installation.status === 'assigned' ? '60%' : '85%' }}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Primary Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {[
+          { label: 'Network Plan', value: sub?.plan?.name || 'N/A', detail: 'Primary Service' },
+          { label: 'Bandwidth', value: `${sub?.plan?.speed || 0}Mbps`, detail: 'Current Limit' },
+          { label: 'Uptime Left', value: `${sub?.daysLeft || 0} Days`, detail: 'Auto-renew active' },
+          { label: 'Periodic Cost', value: formatPrice(sub?.plan?.price || 0), detail: 'Per Month' },
+        ].map((s, i) => (
+          <div key={i} className="bg-white border border-gray-100 p-5 rounded-2xl shadow-sm">
+            <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest mb-3">{s.label}</p>
+            <p className="text-2xl font-bold tracking-tighter text-gray-900">{s.value}</p>
+            <p className="text-gray-300 text-[10px] mt-1 font-medium italic">{s.detail}</p>
           </div>
         ))}
       </div>
 
-      {/* Cards row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Subscription */}
-        {sub && (
-          <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-6">
-            <div className="flex items-center justify-between mb-5">
-              <h3 className="text-white font-semibold text-[15px]">Current Subscription</h3>
-              <a href="/dashboard/customer/subscription" className="text-blue-400 bg-blue-400/10 border border-blue-400/25 text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-blue-400/20 transition-all">
-                Manage
-              </a>
-            </div>
-            <div className="flex flex-col gap-3">
-              {[
-                { label: 'Plan',    value: `${sub.plan.name} - ${sub.plan.speed}Mbps` },
-                { label: 'Price',   value: `${formatPrice(sub.plan.price)} / month` },
-                { label: 'Expires', value: formatDate(sub.expiryDate) },
-              ].map((r) => (
-                <div key={r.label} className="flex items-center justify-between text-sm">
-                  <span className="text-white/35">{r.label}</span>
-                  <span className="text-white/80 font-medium">{r.value}</span>
-                </div>
-              ))}
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-white/35">Status</span>
-                <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${
-                  sub.status === 'active'
-                    ? 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20'
-                    : 'text-red-400 bg-red-400/10 border-red-400/20'
-                }`}>
-                  {sub.status.toUpperCase()}
-                </span>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Subscription Card */}
+        <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
+          <div className="p-6 border-b border-gray-50 flex items-center justify-between">
+            <h3 className="text-sm font-bold uppercase tracking-tight">Contract Details</h3>
+            <button className="text-[10px] font-bold text-blue-600 uppercase tracking-widest hover:underline">Manage</button>
+          </div>
+          <div className="p-6 space-y-4">
+            {[
+              { label: 'Plan Identifier', value: sub?.plan?.name },
+              { label: 'Cost Basis', value: `${formatPrice(sub?.plan?.price)} / cycle` },
+              { label: 'Termination Date', value: sub?.expiryDate ? formatDate(sub.expiryDate) : 'N/A' },
+            ].map((item, idx) => (
+              <div key={idx} className="flex justify-between text-sm">
+                <span className="text-gray-400">{item.label}</span>
+                <span className="text-gray-900 font-semibold">{item.value}</span>
               </div>
-            </div>
+            ))}
           </div>
-        )}
+        </div>
 
-        {/* Tickets */}
-        <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-6">
-          <div className="flex items-center justify-between mb-5">
-            <h3 className="text-white font-semibold text-[15px]">Recent tickets</h3>
-            <button className="text-amber-400 bg-amber-400/10 border border-amber-400/25 text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-amber-400/20 transition-all">
-              New ticket
-            </button>
+        {/* Tickets Card */}
+        <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
+          <div className="p-6 border-b border-gray-50 flex items-center justify-between">
+            <h3 className="text-sm font-bold uppercase tracking-tight">Active Logs</h3>
+            <button className="text-[10px] font-bold text-gray-900 bg-gray-50 px-3 py-1 rounded-md border border-gray-100 uppercase tracking-widest">Request Support</button>
           </div>
-          <div className="flex flex-col gap-3">
-            {tickets.map((t) => (
-              <div key={t.subject} className="flex items-center justify-between bg-white/[0.02] border border-white/[0.05] rounded-xl p-3.5">
-                <div className="flex flex-col gap-0.5">
-                  <span className="text-white/75 text-[13px] font-medium">{t.subject}</span>
-                  <span className="text-white/25 text-[11px]">{t.date}</span>
+          <div className="p-6 space-y-3">
+            {TICKETS.map((t, idx) => (
+              <div key={idx} className="flex items-center justify-between p-3 border border-gray-50 rounded-xl hover:bg-gray-50/50 transition-colors">
+                <div className="flex flex-col">
+                  <span className="text-xs font-bold text-gray-800">{t.subject}</span>
+                  <span className="text-[10px] text-gray-400 font-mono italic">{t.date}</span>
                 </div>
-                <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full border ${STATUS_STYLE[t.status]}`}>
+                <span className={`text-[9px] font-black px-2 py-0.5 rounded-full border uppercase tracking-tighter ${STATUS_STYLE[t.status]}`}>
                   {t.status}
                 </span>
               </div>
