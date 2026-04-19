@@ -181,22 +181,50 @@ export class AdminService {
 
   // ─── Create installation + assign technician directly ─────
 
-  async assignDirect(userId: number, technicianId: number, notes?: string) {
-    // Check user exists
-    const user = await this.prisma.user.findUnique({ where: { id: userId } })
-    if (!user) throw new NotFoundException('User not found.')
+ async assignDirect(userId: number, technicianId: number, notes?: string) {
+  const uid  = Number(userId)
+  const tid  = Number(technicianId)
 
-    // Check technician exists
-    const tech = await this.prisma.user.findUnique({ where: { id: technicianId, role: 'technician' } as any })
-    if (!tech) throw new NotFoundException('Technician not found.')
+  if (!uid || !tid) throw new NotFoundException('Invalid userId or technicianId.')
 
-    // Check if there's already a pending/assigned installation for this user
-    const existing = await this.prisma.installation.findFirst({
-      where: {
-        userId,
-        status: { in: ['pending', 'assigned', 'in_progress'] },
+  const user = await this.prisma.user.findUnique({ where: { id: uid } })
+  if (!user) throw new NotFoundException('User not found.')
+
+  const existing = await this.prisma.installation.findFirst({
+    where: {
+      userId: uid,
+      status: { in: ['pending', 'assigned', 'in_progress'] },
+    },
+  })
+
+  let installation: any
+
+  if (existing) {
+    installation = await this.prisma.installation.update({
+      where: { id: existing.id },
+      data:  { technicianId: tid, status: 'assigned', notes: notes ?? existing.notes },
+      include: {
+        user:       { select: { id: true, name: true, email: true } },
+        technician: { select: { id: true, name: true, email: true } },
       },
     })
+  } else {
+    installation = await this.prisma.installation.create({
+      data: {
+        userId:      uid,
+        technicianId: tid,
+        status: 'assigned',
+        notes:  notes ?? null,
+      },
+      include: {
+        user:       { select: { id: true, name: true, email: true } },
+        technician: { select: { id: true, name: true, email: true } },
+      },
+    })
+  }
+
+  return { message: 'Technician assigned successfully.', installation }
+}
 
     let installation: any
 
