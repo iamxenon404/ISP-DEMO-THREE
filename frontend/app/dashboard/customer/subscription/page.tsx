@@ -18,10 +18,11 @@ interface Subscription {
   plan: Plan
 }
 
+// Updated styles to match your clean light-mode UI
 const STATUS_STYLE: Record<string, string> = {
-  active:    'text-emerald-400 bg-emerald-400/10 border-emerald-400/25',
-  suspended: 'text-red-400    bg-red-400/10    border-red-400/25',
-  pending:   'text-amber-400  bg-amber-400/10  border-amber-400/25',
+  active:    'text-emerald-600 bg-emerald-50 border-emerald-100',
+  suspended: 'text-red-600 bg-red-50 border-red-100',
+  pending:   'text-amber-600 bg-amber-50 border-amber-100',
 }
 
 export default function SubscriptionPage() {
@@ -58,7 +59,6 @@ export default function SubscriptionPage() {
 
   const handleRenew = async () => {
     setPaying(true)
-    // Simulate payment processing delay
     await new Promise((r) => setTimeout(r, 1500))
     try {
       const res = await api.post('/subscriptions/renew', {
@@ -78,128 +78,123 @@ export default function SubscriptionPage() {
   }
 
   const formatDate = (date: string) =>
-    new Date(date).toLocaleDateString('en-NG', { day: 'numeric', month: 'long', year: 'numeric' })
+    new Date(date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
 
-  const formatPrice = (price: number) =>
-    `₦${price.toLocaleString()}`
+  const formatPrice = (price: number) => `₦${price.toLocaleString()}`
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <span className="w-6 h-6 border-2 border-white/20 border-t-blue-400 rounded-full animate-spin" />
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="w-5 h-5 rounded-full border-2 border-slate-200 border-t-blue-500 animate-spin" />
       </div>
     )
   }
 
   return (
-    <div className="flex flex-col gap-8 max-w-3xl">
+    <div className="flex-1 bg-[#f7f7f5] min-h-screen px-10 py-12 flex flex-col gap-10">
+      
       {/* Header */}
       <div>
-        <h1 className="text-white text-2xl font-semibold tracking-tight mb-1">Subscription</h1>
-        <p className="text-white/35 text-sm">Manage your current plan and renewal.</p>
+        <h1 className="text-[30px] font-semibold tracking-tight text-slate-900 leading-none mb-2">
+          Subscription
+        </h1>
+        <p className="text-[14px] text-slate-400">Manage your network node and billing cycle.</p>
       </div>
 
       {/* Current subscription card */}
       {sub ? (
-        <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-6">
-          <div className="flex items-start justify-between mb-6">
+        <div className="bg-white border border-black/[0.08] rounded-2xl p-8 overflow-hidden relative">
+          <div className="flex items-start justify-between mb-8">
             <div>
-              <p className="text-white/40 text-xs font-medium uppercase tracking-wider mb-1">Current plan</p>
-              <h2 className="text-white text-xl font-bold">{sub.plan.name} — {sub.plan.speed}</h2>
+              <p className="text-[10px] font-medium uppercase tracking-widest text-slate-400 mb-2">Current Active Node</p>
+              <h2 className="text-[24px] font-semibold text-slate-900">{sub.plan.name} — {sub.plan.speed}</h2>
             </div>
-            <span className={`text-xs font-semibold px-3 py-1.5 rounded-full border capitalize ${STATUS_STYLE[sub.status]}`}>
+            <span className={`text-[11px] font-bold px-3 py-1 rounded-full border uppercase tracking-wider ${STATUS_STYLE[sub.status]}`}>
               {sub.status}
             </span>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            <div className="bg-white/[0.03] rounded-xl p-4">
-              <p className="text-white/35 text-xs mb-1">Monthly price</p>
-              <p className="text-white font-bold text-lg">{formatPrice(sub.plan.price)}</p>
-            </div>
-            <div className="bg-white/[0.03] rounded-xl p-4">
-              <p className="text-white/35 text-xs mb-1">Expiry date</p>
-              <p className="text-white font-bold text-lg">{formatDate(sub.expiryDate)}</p>
-            </div>
-            <div className="bg-white/[0.03] rounded-xl p-4">
-              <p className="text-white/35 text-xs mb-1">Days remaining</p>
-              <p className={`font-bold text-lg ${sub.daysLeft <= 7 ? 'text-red-400' : 'text-emerald-400'}`}>
-                {sub.daysLeft} days
-              </p>
-            </div>
-            <div className="bg-white/[0.03] rounded-xl p-4">
-              <p className="text-white/35 text-xs mb-1">Speed</p>
-              <p className="text-white font-bold text-lg">{sub.plan.speed}</p>
-            </div>
+          <div className="grid grid-cols-4 gap-3 mb-8">
+            {[
+                { label: 'Monthly Rate', value: formatPrice(sub.plan.price) },
+                { label: 'Expiry Date', value: formatDate(sub.expiryDate) },
+                { label: 'Days Left', value: `${sub.daysLeft} Days`, color: sub.daysLeft <= 7 ? 'text-red-500' : 'text-emerald-500' },
+                { label: 'Uplink Speed', value: sub.plan.speed },
+            ].map((stat) => (
+              <div key={stat.label} className="bg-[#fcfcfb] border border-black/[0.04] rounded-xl p-5">
+                <p className="text-[10px] font-medium uppercase tracking-widest text-slate-400 mb-1">{stat.label}</p>
+                <p className={`text-[18px] font-semibold tracking-tight ${stat.color ?? 'text-slate-900'}`}>{stat.value}</p>
+              </div>
+            ))}
           </div>
 
-          {/* Expiry warning */}
-          {sub.daysLeft <= 7 && sub.status === 'active' && (
-            <div className="bg-amber-400/10 border border-amber-400/25 rounded-xl p-4 mb-6 flex items-center gap-3">
-              <span className="text-amber-400 text-lg">⚠</span>
-              <p className="text-amber-400 text-sm font-medium">
-                Your subscription expires in {sub.daysLeft} day{sub.daysLeft !== 1 ? 's' : ''}. Renew now to avoid interruption.
-              </p>
-            </div>
-          )}
-
-          {sub.status === 'suspended' && (
-            <div className="bg-red-400/10 border border-red-400/25 rounded-xl p-4 mb-6 flex items-center gap-3">
-              <span className="text-red-400 text-lg">✕</span>
-              <p className="text-red-400 text-sm font-medium">
-                Your subscription has expired. Renew to restore access.
+          {/* Warnings */}
+          {(sub.daysLeft <= 7 || sub.status === 'suspended') && (
+            <div className={`flex items-center gap-3 px-5 py-4 rounded-xl border mb-8 ${
+                sub.status === 'suspended' ? 'bg-red-50 border-red-100 text-red-600' : 'bg-amber-50 border-amber-100 text-amber-600'
+            }`}>
+              <span className="font-mono font-bold text-sm">!</span>
+              <p className="text-[13px] font-medium">
+                {sub.status === 'suspended' 
+                    ? 'Node suspended. Immediate renewal required to restore sync.' 
+                    : `Warning: Node expires in ${sub.daysLeft} days. Renew to prevent downtime.`}
               </p>
             </div>
           )}
 
           <button
             onClick={() => setModal(true)}
-            className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold text-sm rounded-xl py-3 transition-all"
+            className="w-full bg-slate-900 hover:opacity-90 text-white font-semibold text-[13px] rounded-xl py-4 transition-all"
           >
-            {sub.status === 'suspended' ? 'Renew Now' : 'Renew Subscription'}
+            {sub.status === 'suspended' ? 'Restore Service' : 'Extend Cycle'}
           </button>
         </div>
       ) : (
-        <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-8 text-center">
-          <p className="text-white/40 text-sm">No active subscription found.</p>
+        <div className="bg-white border border-dashed border-black/[0.15] rounded-2xl p-12 text-center">
+          <p className="text-slate-400 text-[14px] mb-6">No active node configuration found.</p>
           <button
             onClick={() => setModal(true)}
-            className="mt-4 bg-blue-500 hover:bg-blue-600 text-white font-semibold text-sm rounded-xl px-6 py-3 transition-all"
+            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-[13px] rounded-xl px-8 py-3.5 transition-all shadow-lg shadow-blue-500/20"
           >
-            Subscribe Now
+            Deploy New Node
           </button>
         </div>
       )}
 
       {/* Available plans */}
       <div>
-        <h3 className="text-white font-semibold text-[15px] mb-4">Available plans</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <h3 className="text-[13px] font-semibold text-slate-800 uppercase tracking-widest mb-5">Available Protocols</h3>
+        <div className="grid grid-cols-3 gap-3">
           {plans.map((plan) => {
             const isCurrent = sub?.plan.id === plan.id
             return (
               <div
                 key={plan.id}
-                className={`bg-white/[0.03] border rounded-2xl p-5 flex flex-col gap-3 ${
-                  isCurrent ? 'border-blue-500/40' : 'border-white/[0.07]'
+                className={`bg-white border rounded-2xl p-6 flex flex-col gap-4 transition-all ${
+                  isCurrent ? 'border-blue-500 shadow-[0_0_0_1px_#2563eb]' : 'border-black/[0.08] hover:border-black/[0.15]'
                 }`}
               >
-                {isCurrent && (
-                  <span className="text-blue-400 bg-blue-400/10 border border-blue-400/20 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full w-fit">
-                    Current
-                  </span>
-                )}
-                <div>
-                  <p className="text-white font-bold text-base">{plan.name}</p>
-                  <p className="text-white/40 text-sm">{plan.speed}</p>
+                <div className="flex justify-between items-start">
+                    <div>
+                        <p className="text-slate-900 font-bold text-[16px]">{plan.name}</p>
+                        <p className="text-slate-400 text-[12px]">{plan.speed}</p>
+                    </div>
+                    {isCurrent && (
+                        <span className="text-blue-600 bg-blue-50 text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded border border-blue-100">
+                            Current
+                        </span>
+                    )}
                 </div>
-                <p className="text-white font-bold text-xl">{formatPrice(plan.price)}<span className="text-white/30 text-sm font-normal">/mo</span></p>
+                <p className="text-slate-900 font-bold text-[22px] tracking-tight">
+                    {formatPrice(plan.price)}
+                    <span className="text-slate-300 text-[13px] font-normal font-mono ml-1">/mo</span>
+                </p>
                 {!isCurrent && (
                   <button
                     onClick={() => { setSelectedPlan(plan); setModal(true) }}
-                    className="text-blue-400 bg-blue-400/10 hover:bg-blue-400/20 border border-blue-400/25 text-xs font-semibold rounded-lg py-2 transition-all"
+                    className="mt-2 w-full text-slate-600 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-[12px] font-semibold rounded-xl py-2.5 transition-all"
                   >
-                    Switch to {plan.name}
+                    Select Plan
                   </button>
                 )}
               </div>
@@ -208,69 +203,55 @@ export default function SubscriptionPage() {
         </div>
       </div>
 
-      {/* Payment Modal */}
+      {/* Modal */}
       {modal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-[#0f0f1a] border border-white/10 rounded-2xl p-6 w-full max-w-md">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-[2px] flex items-center justify-center z-50 p-4">
+          <div className="bg-white border border-black/[0.08] shadow-2xl rounded-2xl p-8 w-full max-w-md">
             {success ? (
-              <div className="flex flex-col items-center gap-4 py-6">
-                <div className="w-14 h-14 rounded-full bg-emerald-400/20 border border-emerald-400/30 flex items-center justify-center text-2xl">
+              <div className="flex flex-col items-center gap-5 py-6">
+                <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center text-xl border border-emerald-100">
                   ✓
                 </div>
                 <div className="text-center">
-                  <p className="text-white font-semibold text-lg mb-1">Payment Successful!</p>
-                  <p className="text-white/40 text-sm">Your subscription has been renewed for 30 days.</p>
+                  <p className="text-slate-900 font-semibold text-[18px] mb-1">Transaction Verified</p>
+                  <p className="text-slate-400 text-[13px]">Your node cycle has been updated successfully.</p>
                 </div>
               </div>
             ) : (
               <>
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-white font-semibold text-lg">Confirm Payment</h3>
-                  <button
-                    onClick={() => setModal(false)}
-                    className="text-white/30 hover:text-white/60 text-xl transition-all"
-                  >
-                    ✕
-                  </button>
+                <div className="flex items-center justify-between mb-8">
+                  <h3 className="text-slate-900 font-semibold text-[18px]">Confirm Renewal</h3>
+                  <button onClick={() => setModal(false)} className="text-slate-300 hover:text-slate-900 transition-colors">✕</button>
                 </div>
 
-                <div className="bg-white/[0.03] border border-white/[0.07] rounded-xl p-4 mb-6 flex flex-col gap-3">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-white/40">Plan</span>
-                    <span className="text-white font-medium">{selectedPlan?.name} — {selectedPlan?.speed}</span>
+                <div className="bg-[#fcfcfb] border border-black/[0.05] rounded-xl p-5 mb-8 flex flex-col gap-4">
+                  <div className="flex justify-between text-[13px]">
+                    <span className="text-slate-400">Selected Protocol</span>
+                    <span className="text-slate-900 font-medium">{selectedPlan?.name}</span>
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-white/40">Duration</span>
-                    <span className="text-white font-medium">30 days</span>
+                  <div className="flex justify-between text-[13px]">
+                    <span className="text-slate-400">Duration</span>
+                    <span className="text-slate-900 font-medium">30 Day Cycle</span>
                   </div>
-                  <div className="border-t border-white/[0.07] pt-3 flex justify-between">
-                    <span className="text-white/40 text-sm">Total</span>
-                    <span className="text-white font-bold text-lg">{formatPrice(selectedPlan?.price ?? 0)}</span>
+                  <div className="border-t border-black/[0.05] pt-4 flex justify-between items-end">
+                    <span className="text-slate-400 text-[13px]">Total Due</span>
+                    <span className="text-slate-900 font-bold text-[22px] tracking-tight leading-none">{formatPrice(selectedPlan?.price ?? 0)}</span>
                   </div>
-                </div>
-
-                <div className="bg-amber-400/10 border border-amber-400/20 rounded-xl p-3 mb-6">
-                  <p className="text-amber-400/80 text-xs text-center">
-                    This is a simulated payment — no real transaction will occur.
-                  </p>
                 </div>
 
                 <div className="flex gap-3">
                   <button
                     onClick={() => setModal(false)}
-                    className="flex-1 bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-white/60 font-medium text-sm rounded-xl py-3 transition-all"
+                    className="flex-1 bg-white border border-black/[0.08] text-slate-600 font-semibold text-[13px] rounded-xl py-3.5 hover:bg-slate-50 transition-all"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handleRenew}
                     disabled={paying}
-                    className="flex-1 bg-blue-500 hover:bg-blue-600 disabled:opacity-60 text-white font-semibold text-sm rounded-xl py-3 flex items-center justify-center transition-all"
+                    className="flex-1 bg-slate-900 hover:opacity-90 disabled:opacity-50 text-white font-semibold text-[13px] rounded-xl py-3.5 flex items-center justify-center transition-all"
                   >
-                    {paying
-                      ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      : 'Confirm Payment'
-                    }
+                    {paying ? <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" /> : 'Authorize'}
                   </button>
                 </div>
               </>
