@@ -4,168 +4,133 @@ import { useEffect, useState } from 'react'
 import { getStoredUser } from '@/lib/auth'
 import api from '@/lib/api'
 
-interface Installation {
-  id: number
-  status: 'pending' | 'assigned' | 'in_progress' | 'completed'
-  notes?: string
-  technician?: { name: string; email: string } | null
-}
-
-const TICKETS = [
-  { subject: 'Connection dropping at night', date: '2 days ago', status: 'In Progress' },
-  { subject: 'Speed slower than plan', date: '1 week ago', status: 'Resolved' },
-]
-
-const STATUS_STYLE: Record<string, string> = {
-  'In Progress': 'text-amber-600 bg-amber-50 border-amber-200/50',
-  'Resolved': 'text-gray-400 bg-gray-50 border-gray-200',
-  'Open': 'text-blue-600 bg-blue-50 border-blue-200/50',
-}
-
 export default function CustomerOverview() {
   const [user, setUser] = useState<any>(null)
   const [sub, setSub] = useState<any>(null)
-  const [installation, setInstallation] = useState<Installation | null>(null)
-  const [mounted, setMounted] = useState(false)
+  const [installation, setInstallation] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    setUser(getStoredUser())
-    setMounted(true)
-  }, [])
-
-  useEffect(() => {
-    if (!mounted) return
     const fetchData = async () => {
       try {
-        const [subRes, instRes] = await Promise.all([
+        const u = getStoredUser()
+        setUser(u)
+        const [s, i] = await Promise.all([
           api.get('/subscriptions/my'),
-          api.get(`/admin/installations/my/${getStoredUser()?.id}`)
+          api.get(`/admin/installations/my/${u?.id}`)
         ])
-        setSub(subRes.data.subscription)
-        setInstallation(instRes.data.installation)
-      } catch (err) {
-        console.error('System Data Fetch Failure', err)
+        setSub(s.data.subscription)
+        setInstallation(i.data.installation)
+      } catch (e) {
+        console.error(e)
       } finally {
         setLoading(false)
       }
     }
     fetchData()
-  }, [mounted])
+  }, [])
 
-  if (!mounted || loading) return (
-    <div className="flex items-center justify-center min-h-[400px]">
-      <div className="w-8 h-8 border-2 border-gray-200 border-t-blue-600 rounded-full animate-spin" />
-    </div>
-  )
-
-  const formatPrice = (price: number) => `₦${(price || 0).toLocaleString()}`
-  const formatDate = (date: string) => new Date(date).toLocaleDateString('en-NG', { day: 'numeric', month: 'long', year: 'numeric' })
+  if (loading) return <div className="p-8 font-mono text-[10px] uppercase tracking-widest animate-pulse text-black/40">Initializing_System...</div>
 
   return (
-    <div className="max-w-[1200px] mx-auto space-y-8 pb-12 text-gray-900">
+    <div className="max-w-[1400px] mx-auto p-4 md:p-8 space-y-[1px] bg-black/5 border border-black/5">
       
-      {/* Header section */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-gray-100 pb-6">
+      {/* HEADER / TOP BAR */}
+      <div className="bg-white p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-gray-900">
-            Account Overview
+          <h1 className="text-xl font-black uppercase tracking-tighter text-black leading-none">
+            User_Overview <span className="text-blue-600">.01</span>
           </h1>
-          <p className="text-gray-400 text-xs font-medium uppercase tracking-[0.15em] mt-1">
-            Session: {user?.name?.split(' ')[0] || 'User'} // Status: Verified
+          <p className="text-[10px] font-mono text-black/40 uppercase tracking-[0.2em] mt-2">
+            ID: {user?.id} // Node: {user?.name?.split(' ')[0]}
           </p>
         </div>
-        <div className={`text-[10px] font-bold px-3 py-1 rounded-full border tracking-widest uppercase ${
-          sub?.status === 'active' ? 'bg-emerald-50 border-emerald-100 text-emerald-600' : 'bg-red-50 border-red-100 text-red-600'
-        }`}>
-          ● {sub?.status || 'OFFLINE'}
+        <div className="flex items-center gap-6">
+          <div className="text-right">
+            <p className="text-[9px] font-mono text-black/30 uppercase tracking-widest">Connection_Status</p>
+            <p className="text-xs font-bold uppercase text-emerald-500">Signal_Locked</p>
+          </div>
+          <div className="h-8 w-[1px] bg-black/10 hidden md:block" />
+          <div className="px-4 py-2 bg-black text-white text-[10px] font-bold uppercase tracking-widest cursor-pointer hover:bg-blue-600 transition-colors">
+            Manage_Account
+          </div>
         </div>
       </div>
 
-      {/* Installation Tracker (Only active if not completed) */}
+      {/* INSTALLATION TRACKER (The "Xen" Module) */}
       {installation && installation.status !== 'completed' && (
-        <div className="bg-blue-600 rounded-2xl p-6 md:p-8 text-white relative overflow-hidden shadow-lg shadow-blue-200">
-          <div className="relative z-10">
-            <p className="text-blue-100 text-[10px] font-black uppercase tracking-[0.2em] mb-4">Service Deployment</p>
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-              <div>
-                <h2 className="text-2xl font-bold tracking-tight mb-2">Installation in progress</h2>
-                <p className="text-blue-100/70 text-sm max-w-sm leading-relaxed">
-                  Technician {installation.technician?.name || 'assignment pending'} is synchronizing your local terminal.
-                </p>
-              </div>
-              <div className="flex flex-col gap-2 min-w-[200px]">
-                <div className="flex justify-between text-[10px] font-bold uppercase tracking-tighter">
-                  <span>Progress</span>
-                  <span>{installation.status.replace('_', ' ')}</span>
-                </div>
-                <div className="h-1 w-full bg-white/20 rounded-full">
-                  <div 
-                    className="h-full bg-white rounded-full transition-all duration-1000" 
-                    style={{ width: installation.status === 'pending' ? '25%' : installation.status === 'assigned' ? '60%' : '85%' }}
-                  />
-                </div>
-              </div>
+        <div className="bg-white p-6 md:p-8 grid grid-cols-1 md:grid-cols-4 gap-8 items-center border-t border-b border-black/5">
+          <div className="md:col-span-1">
+            <p className="text-[10px] font-mono text-blue-600 font-bold uppercase tracking-[0.3em] mb-2">Active_Deployment</p>
+            <h2 className="text-2xl font-black uppercase tracking-tighter leading-none">Installation</h2>
+          </div>
+          <div className="md:col-span-2">
+            <div className="flex justify-between mb-2">
+              <span className="text-[9px] font-mono uppercase text-black/40">Hardware_Sync_Progress</span>
+              <span className="text-[9px] font-mono font-bold text-black uppercase">{installation.status}</span>
             </div>
+            <div className="h-[2px] w-full bg-black/5">
+              <div 
+                className="h-full bg-blue-600 transition-all duration-700" 
+                style={{ width: installation.status === 'pending' ? '20%' : '65%' }} 
+              />
+            </div>
+          </div>
+          <div className="md:col-span-1 text-right">
+            <p className="text-[9px] font-mono text-black/40 uppercase mb-1">Technician</p>
+            <p className="text-xs font-bold uppercase">{installation.technician?.name || 'Awaiting_Assignment'}</p>
           </div>
         </div>
       )}
 
-      {/* Primary Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* STATS ROW */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-[1px]">
         {[
-          { label: 'Network Plan', value: sub?.plan?.name || 'N/A', detail: 'Primary Service' },
-          { label: 'Bandwidth', value: `${sub?.plan?.speed || 0}Mbps`, detail: 'Current Limit' },
-          { label: 'Uptime Left', value: `${sub?.daysLeft || 0} Days`, detail: 'Auto-renew active' },
-          { label: 'Periodic Cost', value: formatPrice(sub?.plan?.price || 0), detail: 'Per Month' },
+          { label: 'Network_Tier', val: sub?.plan?.name || 'NULL', unit: 'Fiber' },
+          { label: 'Throughput', val: sub?.plan?.speed || '0', unit: 'Mbps' },
+          { label: 'System_Clock', val: sub?.daysLeft || '0', unit: 'Days_Rem' },
+          { label: 'Billing_Value', val: (sub?.plan?.price || 0).toLocaleString(), unit: 'NGN' },
         ].map((s, i) => (
-          <div key={i} className="bg-white border border-gray-100 p-5 rounded-2xl shadow-sm">
-            <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest mb-3">{s.label}</p>
-            <p className="text-2xl font-bold tracking-tighter text-gray-900">{s.value}</p>
-            <p className="text-gray-300 text-[10px] mt-1 font-medium italic">{s.detail}</p>
+          <div key={i} className="bg-white p-6 group hover:bg-gray-50 transition-colors">
+            <p className="text-[9px] font-mono text-black/30 uppercase tracking-widest mb-4 group-hover:text-blue-600">{s.label}</p>
+            <div className="flex items-baseline gap-1">
+              <span className="text-3xl font-black tracking-tighter">{s.val}</span>
+              <span className="text-[10px] font-mono text-black/40 uppercase">{s.unit}</span>
+            </div>
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Subscription Card */}
-        <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
-          <div className="p-6 border-b border-gray-50 flex items-center justify-between">
-            <h3 className="text-sm font-bold uppercase tracking-tight">Contract Details</h3>
-            <button className="text-[10px] font-bold text-blue-600 uppercase tracking-widest hover:underline">Manage</button>
+      {/* BOTTOM MODULES */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-[1px]">
+        {/* Support Logs */}
+        <div className="bg-white p-8">
+          <div className="flex justify-between items-center mb-8">
+            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-black/40">Technical_Logs</h3>
+            <span className="text-[10px] font-bold text-blue-600 cursor-pointer hover:underline uppercase tracking-widest">New_Entry</span>
           </div>
-          <div className="p-6 space-y-4">
-            {[
-              { label: 'Plan Identifier', value: sub?.plan?.name },
-              { label: 'Cost Basis', value: `${formatPrice(sub?.plan?.price)} / cycle` },
-              { label: 'Termination Date', value: sub?.expiryDate ? formatDate(sub.expiryDate) : 'N/A' },
-            ].map((item, idx) => (
-              <div key={idx} className="flex justify-between text-sm">
-                <span className="text-gray-400">{item.label}</span>
-                <span className="text-gray-900 font-semibold">{item.value}</span>
-              </div>
-            ))}
+          <div className="space-y-4">
+            <div className="flex justify-between py-3 border-b border-black/5 text-[11px]">
+              <span className="font-bold uppercase tracking-tight text-black/70 italic">Conn_Latency_Drop</span>
+              <span className="font-mono text-black/30 uppercase">02_Days_Ago</span>
+            </div>
+            <div className="flex justify-between py-3 border-b border-black/5 text-[11px]">
+              <span className="font-bold uppercase tracking-tight text-black/70 italic">Package_Sync_Issue</span>
+              <span className="font-mono text-black/30 uppercase">01_Week_Ago</span>
+            </div>
           </div>
         </div>
 
-        {/* Tickets Card */}
-        <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
-          <div className="p-6 border-b border-gray-50 flex items-center justify-between">
-            <h3 className="text-sm font-bold uppercase tracking-tight">Active Logs</h3>
-            <button className="text-[10px] font-bold text-gray-900 bg-gray-50 px-3 py-1 rounded-md border border-gray-100 uppercase tracking-widest">Request Support</button>
-          </div>
-          <div className="p-6 space-y-3">
-            {TICKETS.map((t, idx) => (
-              <div key={idx} className="flex items-center justify-between p-3 border border-gray-50 rounded-xl hover:bg-gray-50/50 transition-colors">
-                <div className="flex flex-col">
-                  <span className="text-xs font-bold text-gray-800">{t.subject}</span>
-                  <span className="text-[10px] text-gray-400 font-mono italic">{t.date}</span>
-                </div>
-                <span className={`text-[9px] font-black px-2 py-0.5 rounded-full border uppercase tracking-tighter ${STATUS_STYLE[t.status]}`}>
-                  {t.status}
-                </span>
-              </div>
-            ))}
+        {/* Quick Actions */}
+        <div className="bg-white p-8 border-l border-black/5">
+          <h3 className="text-xs font-black uppercase tracking-[0.2em] text-black/40 mb-8">Terminal_Actions</h3>
+          <div className="grid grid-cols-1 gap-2">
+            <button className="w-full py-4 px-6 border border-black/10 text-[10px] font-bold uppercase tracking-[0.2em] text-left hover:bg-black hover:text-white transition-all">
+              Request_Bandwidth_Upgrade
+            </button>
+            <button className="w-full py-4 px-6 border border-black/10 text-[10px] font-bold uppercase tracking-[0.2em] text-left hover:bg-black hover:text-white transition-all">
+              System_Diagnostics
+            </button>
           </div>
         </div>
       </div>
