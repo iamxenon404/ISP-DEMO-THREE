@@ -20,10 +20,11 @@ interface Ticket {
   waitTime?: number
 }
 
+// Updated styles to match the clean light-mode UI
 const SENDER_STYLE: Record<string, string> = {
-  customer: 'bg-blue-500/20 border border-blue-500/30 text-blue-100 ml-auto',
-  ai:       'bg-purple-500/15 border border-purple-500/25 text-white/85',
-  support:  'bg-white/[0.08] border border-white/10 text-white/85',
+  customer: 'bg-blue-600 text-white ml-auto rounded-br-none shadow-sm',
+  ai:       'bg-purple-50 border border-purple-100 text-purple-900 rounded-bl-none',
+  support:  'bg-white border border-black/[0.08] text-slate-900 rounded-bl-none shadow-sm',
 }
 
 const SENDER_LABEL: Record<string, string> = {
@@ -95,7 +96,7 @@ export default function TicketChatPage() {
   }
 
   const formatTime = (date: string) =>
-    new Date(date).toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit' })
+    new Date(date).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
 
   const isResolved = ticket?.status === 'resolved' || ticket?.status === 'closed'
   const isAIHandling = ticket?.status === 'ai_handling'
@@ -103,8 +104,8 @@ export default function TicketChatPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <span className="w-6 h-6 border-2 border-white/20 border-t-blue-400 rounded-full animate-spin" />
+      <div className="flex-1 bg-[#f7f7f5] flex items-center justify-center min-h-screen">
+        <div className="w-5 h-5 border-2 border-slate-200 border-t-blue-500 rounded-full animate-spin" />
       </div>
     )
   }
@@ -112,66 +113,78 @@ export default function TicketChatPage() {
   if (!ticket) return null
 
   return (
-    <div className="flex flex-col h-[calc(100vh-80px)] max-w-3xl">
+    <div className="flex-1 bg-[#f7f7f5] min-h-screen px-10 py-12 flex flex-col gap-6 max-w-4xl mx-auto">
+      
       {/* Header */}
-      <div className="flex items-start justify-between mb-4 flex-shrink-0">
+      <div className="flex items-center justify-between flex-shrink-0">
         <div>
           <button
             onClick={() => router.push('/dashboard/customer/support')}
-            className="text-white/30 hover:text-white/60 text-sm mb-2 flex items-center gap-1 transition-all"
+            className="text-slate-400 hover:text-slate-900 text-[12px] font-semibold uppercase tracking-widest mb-3 flex items-center gap-2 transition-all"
           >
-            ← Back to tickets
+            ← Back to Archive
           </button>
-          <h1 className="text-white font-semibold text-lg">{ticket.subject}</h1>
+          <h1 className="text-slate-900 font-bold text-[24px] tracking-tight">{ticket.subject}</h1>
         </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
+        
+        <div className="flex items-center gap-3">
           {isAIHandling && (
             <button
               onClick={handleEscalate}
               disabled={escalating}
-              className="text-amber-400 bg-amber-400/10 hover:bg-amber-400/20 border border-amber-400/25 text-xs font-semibold px-3 py-2 rounded-lg transition-all disabled:opacity-60"
+              className="bg-white border border-black/[0.08] hover:bg-slate-50 text-slate-900 text-[12px] font-bold px-4 py-2.5 rounded-xl transition-all shadow-sm disabled:opacity-50"
             >
-              {escalating ? '...' : '👤 Talk to human'}
+              {escalating ? 'Connecting...' : 'Request Human Agent'}
             </button>
           )}
           {isWaiting && (
-            <div className="text-amber-400 bg-amber-400/10 border border-amber-400/20 text-xs font-medium px-3 py-2 rounded-lg">
-              ⏳ Est. wait: {ticket.waitTime} min
+            <div className="bg-amber-50 border border-amber-100 text-amber-600 text-[12px] font-bold px-4 py-2.5 rounded-xl">
+              Queue: {ticket.waitTime}m
             </div>
           )}
         </div>
       </div>
 
-      {/* Status banner */}
+      {/* Dynamic Status Banners */}
       {isAIHandling && (
-        <div className="bg-purple-500/10 border border-purple-500/20 rounded-xl px-4 py-2.5 mb-4 flex items-center gap-2 flex-shrink-0">
-          <span className="text-purple-400 text-sm">🤖</span>
-          <p className="text-purple-300 text-xs">You&apos;re chatting with our AI assistant. Click <strong>Talk to human</strong> anytime to connect with a support agent.</p>
+        <div className="bg-purple-50 border border-purple-100 rounded-2xl px-5 py-3 flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
+          <span className="text-lg">🤖</span>
+          <p className="text-purple-700 text-[13px] font-medium">
+            System synchronized with AI Support. Escalate anytime for human intervention.
+          </p>
         </div>
       )}
 
       {isWaiting && (
-        <div className="bg-amber-400/10 border border-amber-400/20 rounded-xl px-4 py-2.5 mb-4 flex items-center gap-2 flex-shrink-0">
-          <span className="text-amber-400 text-sm">⏳</span>
-          <p className="text-amber-300 text-xs">A support agent will join shortly. Estimated wait: <strong>{ticket.waitTime} minutes</strong>.</p>
+        <div className="bg-amber-50 border border-amber-100 rounded-2xl px-5 py-3 flex items-center gap-3">
+          <span className="text-lg">⏳</span>
+          <p className="text-amber-700 text-[13px] font-medium">
+            Agent requested. Average response time: <strong>{ticket.waitTime} minutes</strong>.
+          </p>
         </div>
       )}
 
-      {/* Chat area */}
-      <div className="flex-1 bg-white/[0.02] border border-white/[0.07] rounded-2xl flex flex-col overflow-hidden">
-        <div className="flex-1 overflow-y-auto p-5 space-y-4">
+      {/* Chat Workspace */}
+      <div className="flex-1 bg-white border border-black/[0.08] rounded-3xl flex flex-col overflow-hidden shadow-sm h-[600px]">
+        
+        {/* Scrollable Messages */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-[#fcfcfb]/50">
           {messages.map((msg) => {
             const isMe = msg.senderType === 'customer'
             return (
               <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-sm rounded-2xl px-4 py-3 ${SENDER_STYLE[msg.senderType]}`}>
+                <div className={`max-w-[80%] rounded-2xl px-5 py-3.5 ${SENDER_STYLE[msg.senderType]}`}>
                   {!isMe && (
-                    <p className="text-[11px] font-semibold mb-1 opacity-60">
+                    <p className="text-[10px] font-bold uppercase tracking-wider mb-1 opacity-60">
                       {SENDER_LABEL[msg.senderType] ?? msg.senderName}
                     </p>
                   )}
-                  <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>
-                  <p className="text-[10px] opacity-40 mt-1.5 text-right">{formatTime(msg.createdAt)}</p>
+                  <p className="text-[14px] leading-relaxed font-medium">
+                    {msg.content}
+                  </p>
+                  <p className={`text-[10px] mt-2 opacity-50 font-mono ${isMe ? 'text-right' : 'text-left'}`}>
+                    {formatTime(msg.createdAt)}
+                  </p>
                 </div>
               </div>
             )
@@ -179,26 +192,28 @@ export default function TicketChatPage() {
           <div ref={bottomRef} />
         </div>
 
-        {/* Input */}
-        <div className="border-t border-white/[0.07] p-4 flex-shrink-0">
+        {/* Action Bar */}
+        <div className="border-t border-black/[0.05] p-5 bg-white">
           {isResolved ? (
-            <div className="bg-emerald-400/10 border border-emerald-400/20 rounded-xl p-3 text-center">
-              <p className="text-emerald-400 text-sm font-medium">This ticket is closed</p>
+            <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-4 text-center">
+              <p className="text-emerald-600 text-[13px] font-bold uppercase tracking-widest">
+                Communication Channel Closed
+              </p>
             </div>
           ) : (
-            <div className="flex gap-2">
+            <div className="flex gap-3">
               <input
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
-                placeholder="Type your message..."
-                className="flex-1 bg-white/[0.05] border border-white/10 focus:border-blue-500/50 rounded-xl px-4 py-2.5 text-white text-sm placeholder:text-white/20 outline-none transition-all"
+                placeholder="Synchronize message..."
+                className="flex-1 bg-[#f7f7f5] border border-black/[0.05] focus:border-blue-500 rounded-xl px-5 py-3 text-slate-900 text-[14px] outline-none transition-all"
               />
               <button
                 onClick={handleSend}
                 disabled={sending || !input.trim()}
-                className="bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white font-semibold text-sm px-5 py-2.5 rounded-xl transition-all"
+                className="bg-slate-900 hover:opacity-90 disabled:opacity-30 text-white font-bold text-[13px] px-8 rounded-xl transition-all shadow-lg shadow-slate-900/10"
               >
                 {sending ? '...' : 'Send'}
               </button>
