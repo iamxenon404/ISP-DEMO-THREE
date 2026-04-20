@@ -50,7 +50,7 @@ export default function SubscriptionPage() {
       if (subRes.data.subscription) {
         setSelectedPlan(subRes.data.subscription.plan)
       } else if (plansRes.data.length > 0) {
-        setSelectedPlan(plansRes.data[0]) // Default to first plan for new users
+        setSelectedPlan(plansRes.data[0])
       }
     } catch (err) {
       console.error(err)
@@ -61,33 +61,19 @@ export default function SubscriptionPage() {
 
   const handleRenew = async () => {
     if (!selectedPlan) return
-    
     setPaying(true)
     await new Promise((r) => setTimeout(r, 1500))
-    
     try {
-      /**
-       * If 'sub' is null, we hit the creation endpoint.
-       * Most backends use POST /subscriptions to create. 
-       * If your backend uses a different name (like /create), change it below.
-       */
       const endpoint = sub ? '/subscriptions/renew' : '/subscriptions'
-      
-      const res = await api.post(endpoint, {
-        planId: selectedPlan.id,
-      })
-      
+      const res = await api.post(endpoint, { planId: selectedPlan.id })
       setSub(res.data.subscription)
       setSuccess(true)
-      
       setTimeout(() => {
         setModal(false)
         setSuccess(false)
       }, 2000)
     } catch (err: any) {
-      console.error("Transaction Error:", err.response?.data || err.message)
-      // If /subscriptions still 404s, your backend might use /subscriptions/subscribe
-      alert(`Error: ${err.response?.status === 404 ? "Endpoint not found for new users. Check backend route for creating subs." : "Transaction failed"}`)
+      alert("Payment failed. Please try again.")
     } finally {
       setPaying(false)
     }
@@ -111,17 +97,17 @@ export default function SubscriptionPage() {
       
       <div>
         <h1 className="text-[30px] font-semibold tracking-tight text-slate-900 leading-none mb-2">
-          Subscription
+          My Subscription
         </h1>
-        <p className="text-[14px] text-slate-400">Manage your network node and billing cycle.</p>
+        <p className="text-[14px] text-slate-400">Manage your internet plan and billing details.</p>
       </div>
 
       {sub ? (
-        <div className="bg-white border border-black/[0.08] rounded-2xl p-8 overflow-hidden relative">
+        <div className="bg-white border border-black/[0.08] rounded-2xl p-8 shadow-sm">
           <div className="flex items-start justify-between mb-8">
             <div>
-              <p className="text-[10px] font-medium uppercase tracking-widest text-slate-400 mb-2">Current Active Node</p>
-              <h2 className="text-[24px] font-semibold text-slate-900">{sub.plan.name} — {sub.plan.speed}</h2>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Current Plan</p>
+              <h2 className="text-[24px] font-semibold text-slate-900">{sub.plan.name}</h2>
             </div>
             <span className={`text-[11px] font-bold px-3 py-1 rounded-full border uppercase tracking-wider ${STATUS_STYLE[sub.status]}`}>
               {sub.status}
@@ -130,13 +116,13 @@ export default function SubscriptionPage() {
 
           <div className="grid grid-cols-4 gap-3 mb-8">
             {[
-                { label: 'Monthly Rate', value: formatPrice(sub.plan.price) },
+                { label: 'Monthly Price', value: formatPrice(sub.plan.price) },
                 { label: 'Expiry Date', value: formatDate(sub.expiryDate) },
-                { label: 'Days Left', value: `${sub.daysLeft} Days`, color: sub.daysLeft <= 7 ? 'text-red-500' : 'text-emerald-500' },
-                { label: 'Uplink Speed', value: sub.plan.speed },
+                { label: 'Time Remaining', value: `${sub.daysLeft} Days`, color: sub.daysLeft <= 7 ? 'text-red-500' : 'text-emerald-500' },
+                { label: 'Internet Speed', value: sub.plan.speed },
             ].map((stat) => (
               <div key={stat.label} className="bg-[#fcfcfb] border border-black/[0.04] rounded-xl p-5">
-                <p className="text-[10px] font-medium uppercase tracking-widest text-slate-400 mb-1">{stat.label}</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">{stat.label}</p>
                 <p className={`text-[18px] font-semibold tracking-tight ${stat.color ?? 'text-slate-900'}`}>{stat.value}</p>
               </div>
             ))}
@@ -146,11 +132,11 @@ export default function SubscriptionPage() {
             <div className={`flex items-center gap-3 px-5 py-4 rounded-xl border mb-8 ${
                 sub.status === 'suspended' ? 'bg-red-50 border-red-100 text-red-600' : 'bg-amber-50 border-amber-100 text-amber-600'
             }`}>
-              <span className="font-mono font-bold text-sm">!</span>
+              <span className="font-bold text-lg">!</span>
               <p className="text-[13px] font-medium">
                 {sub.status === 'suspended' 
-                    ? 'Node suspended. Immediate renewal required to restore sync.' 
-                    : `Warning: Node expires in ${sub.daysLeft} days. Renew to prevent downtime.`}
+                    ? 'Service is currently suspended. Please renew to continue using the internet.' 
+                    : `Your plan expires in ${sub.daysLeft} days. Renew now to avoid losing your connection.`}
               </p>
             </div>
           )}
@@ -159,31 +145,31 @@ export default function SubscriptionPage() {
             onClick={() => { setSelectedPlan(sub.plan); setModal(true) }}
             className="w-full bg-slate-900 hover:opacity-90 text-white font-semibold text-[13px] rounded-xl py-4 transition-all"
           >
-            {sub.status === 'suspended' ? 'Restore Service' : 'Extend Cycle'}
+            {sub.status === 'suspended' ? 'Renew Service' : 'Extend Plan'}
           </button>
         </div>
       ) : (
         <div className="bg-white border border-dashed border-black/[0.15] rounded-2xl p-12 text-center">
-          <p className="text-slate-400 text-[14px] mb-6 font-medium">No active node configuration found for this account.</p>
+          <p className="text-slate-400 text-[14px] mb-6 font-medium">You don't have an active internet plan.</p>
           <button
             onClick={() => { setModal(true) }}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-[13px] rounded-xl px-8 py-3.5 transition-all shadow-lg shadow-blue-500/20"
+            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-[13px] rounded-xl px-8 py-3.5 transition-all"
           >
-            Deploy New Node
+            Choose a Plan
           </button>
         </div>
       )}
 
       <div>
-        <h3 className="text-[13px] font-semibold text-slate-800 uppercase tracking-widest mb-5">Available Protocols</h3>
-        <div className="grid grid-cols-3 gap-3">
+        <h3 className="text-[13px] font-bold text-slate-800 uppercase tracking-widest mb-5">Available Plans</h3>
+        <div className="grid grid-cols-3 gap-4">
           {plans.map((plan) => {
             const isCurrent = sub?.plan.id === plan.id
             return (
               <div
                 key={plan.id}
                 className={`bg-white border rounded-2xl p-6 flex flex-col gap-4 transition-all ${
-                  isCurrent ? 'border-blue-500 shadow-[0_0_0_1px_#2563eb]' : 'border-black/[0.08] hover:border-black/[0.15]'
+                  isCurrent ? 'border-blue-500 ring-1 ring-blue-500' : 'border-black/[0.08] hover:border-black/[0.15]'
                 }`}
               >
                 <div className="flex justify-between items-start">
@@ -193,13 +179,13 @@ export default function SubscriptionPage() {
                     </div>
                     {isCurrent && (
                         <span className="text-blue-600 bg-blue-50 text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded border border-blue-100">
-                            Current
+                            Active
                         </span>
                     )}
                 </div>
                 <p className="text-slate-900 font-bold text-[22px] tracking-tight">
                     {formatPrice(plan.price)}
-                    <span className="text-slate-300 text-[13px] font-normal font-mono ml-1">/mo</span>
+                    <span className="text-slate-300 text-[13px] font-normal ml-1">/month</span>
                 </p>
                 {!isCurrent && (
                   <button
@@ -217,37 +203,37 @@ export default function SubscriptionPage() {
 
       {modal && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-[2px] flex items-center justify-center z-50 p-4">
-          <div className="bg-white border border-black/[0.08] shadow-2xl rounded-2xl p-8 w-full max-w-md">
+          <div className="bg-white shadow-2xl rounded-2xl p-8 w-full max-w-md border border-black/[0.05]">
             {success ? (
               <div className="flex flex-col items-center gap-5 py-6">
                 <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center text-xl border border-emerald-100">
                   ✓
                 </div>
                 <div className="text-center">
-                  <p className="text-slate-900 font-semibold text-[18px] mb-1">Transaction Verified</p>
-                  <p className="text-slate-400 text-[13px]">Your node cycle has been updated successfully.</p>
+                  <p className="text-slate-900 font-semibold text-[18px] mb-1">Payment Successful</p>
+                  <p className="text-slate-400 text-[13px]">Your subscription has been updated.</p>
                 </div>
               </div>
             ) : (
               <>
                 <div className="flex items-center justify-between mb-8">
                   <h3 className="text-slate-900 font-semibold text-[18px]">
-                    {sub ? 'Confirm Renewal' : 'Initial Deployment'}
+                    {sub ? 'Renew Subscription' : 'Start Subscription'}
                   </h3>
-                  <button onClick={() => setModal(false)} className="text-slate-300 hover:text-slate-900 transition-colors">✕</button>
+                  <button onClick={() => setModal(false)} className="text-slate-300 hover:text-slate-900">✕</button>
                 </div>
 
                 <div className="bg-[#fcfcfb] border border-black/[0.05] rounded-xl p-5 mb-8 flex flex-col gap-4">
                   <div className="flex justify-between text-[13px]">
-                    <span className="text-slate-400">Selected Protocol</span>
+                    <span className="text-slate-400">Selected Plan</span>
                     <span className="text-slate-900 font-medium">{selectedPlan?.name}</span>
                   </div>
                   <div className="flex justify-between text-[13px]">
-                    <span className="text-slate-400">Duration</span>
-                    <span className="text-slate-900 font-medium">30 Day Cycle</span>
+                    <span className="text-slate-400">Validity</span>
+                    <span className="text-slate-900 font-medium">30 Days</span>
                   </div>
                   <div className="border-t border-black/[0.05] pt-4 flex justify-between items-end">
-                    <span className="text-slate-400 text-[13px]">Total Due</span>
+                    <span className="text-slate-400 text-[13px]">Amount to Pay</span>
                     <span className="text-slate-900 font-bold text-[22px] tracking-tight leading-none">{formatPrice(selectedPlan?.price ?? 0)}</span>
                   </div>
                 </div>
@@ -267,7 +253,7 @@ export default function SubscriptionPage() {
                     {paying ? (
                       <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
                     ) : (
-                      sub ? 'Authorize' : 'Deploy Node'
+                      sub ? 'Pay Now' : 'Confirm Plan'
                     )}
                   </button>
                 </div>
