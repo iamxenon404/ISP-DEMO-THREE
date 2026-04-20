@@ -24,16 +24,16 @@ interface Technician {
 }
 
 const ROLE_STYLE: Record<string, string> = {
-  customer:   'text-blue-400   bg-blue-400/10   border-blue-400/20',
-  admin:      'text-purple-400 bg-purple-400/10 border-purple-400/20',
-  support:    'text-amber-400  bg-amber-400/10  border-amber-400/20',
-  technician: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20',
+  customer:   'text-blue-600 bg-blue-50 border-blue-100',
+  admin:      'text-purple-600 bg-purple-50 border-purple-100',
+  support:    'text-amber-600 bg-amber-50 border-amber-100',
+  technician: 'text-emerald-600 bg-emerald-50 border-emerald-100',
 }
 
 const STATUS_STYLE: Record<string, string> = {
-  active:    'text-emerald-400 bg-emerald-400/10 border-emerald-400/20',
-  suspended: 'text-red-400     bg-red-400/10     border-red-400/20',
-  pending:   'text-amber-400   bg-amber-400/10   border-amber-400/20',
+  active:    'text-emerald-600 bg-emerald-50 border-emerald-100',
+  suspended: 'text-red-600 bg-red-50 border-red-100',
+  pending:   'text-amber-600 bg-amber-50 border-amber-100',
 }
 
 const ROLE_FILTERS = ['all', 'customer', 'support', 'technician', 'admin']
@@ -89,16 +89,12 @@ export default function AdminUsersPage() {
         technicianId: selectedTech,
       })
       
-      // Close and clear
       setAssignModal(false)
       setSelectedUser(null)
       setSelectedTech(null)
-      
-      // Refresh the list to show any updated status
       fetchData()
     } catch (err) {
-      console.error("Assignment failed", err)
-      alert("Could not assign technician. Check if an installation already exists.")
+      alert("Could not assign technician. An installation record may already exist.")
     } finally {
       setAssigning(false)
     }
@@ -109,13 +105,13 @@ export default function AdminUsersPage() {
     : users.filter((u) => u.role === roleFilter)
 
   const formatDate = (date: string) =>
-    new Date(date).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: '2-digit' })
+    new Date(date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex-1 bg-[#f7f7f5] min-h-screen px-10 py-12 flex flex-col gap-8">
       <div>
-        <h1 className="text-white text-2xl font-semibold tracking-tight mb-1">User management</h1>
-        <p className="text-white/35 text-sm">Manage all users, roles and access.</p>
+        <h1 className="text-slate-900 text-[30px] font-semibold tracking-tight leading-none mb-2">User Management</h1>
+        <p className="text-slate-400 text-[14px]">Manage customer accounts, staff roles, and service access.</p>
       </div>
 
       <div className="flex gap-2 flex-wrap">
@@ -123,65 +119,65 @@ export default function AdminUsersPage() {
           <button
             key={f}
             onClick={() => setRoleFilter(f)}
-            className={`text-xs font-medium px-3 py-1.5 rounded-lg border transition-all capitalize ${
+            className={`text-[12px] font-bold px-4 py-2 rounded-xl border transition-all capitalize tracking-tight ${
               roleFilter === f
-                ? 'text-purple-400 bg-purple-400/10 border-purple-400/25'
-                : 'text-white/35 border-white/[0.07] hover:text-white/60'
+                ? 'text-slate-900 bg-white border-slate-200 shadow-sm'
+                : 'text-slate-400 border-transparent hover:text-slate-600'
             }`}
           >
-            {f === 'all' ? `All (${users.length})` : `${f} (${users.filter((u) => u.role === f).length})`}
+            {f === 'all' ? `All Users (${users.length})` : `${f}s (${users.filter((u) => u.role === f).length})`}
           </button>
         ))}
       </div>
 
-      <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl overflow-hidden">
+      <div className="bg-white border border-black/[0.08] rounded-2xl overflow-hidden shadow-sm">
         {loading ? (
           <div className="flex items-center justify-center h-40">
-            <span className="w-5 h-5 border-2 border-white/20 border-t-purple-400 rounded-full animate-spin" />
+            <span className="w-5 h-5 border-2 border-slate-200 border-t-blue-500 rounded-full animate-spin" />
           </div>
         ) : (
-          <table className="w-full">
+          <table className="w-full text-left">
             <thead>
-              <tr className="border-b border-white/[0.07]">
-                {['User', 'Role', 'Plan', 'Status', 'Joined', 'Actions'].map((h) => (
-                  <th key={h} className="text-white/25 text-[11px] font-semibold uppercase tracking-wider text-left px-5 py-4">
+              <tr className="border-b border-black/[0.05] bg-[#fcfcfb]">
+                {['User Details', 'Account Role', 'Active Plan', 'Status', 'Joined Date', 'Actions'].map((h) => (
+                  <th key={h} className="text-slate-400 text-[10px] font-bold uppercase tracking-widest px-6 py-4">
                     {h}
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-black/[0.04]">
               {filtered.map((u) => (
-                <tr key={u.id} className="border-b border-white/[0.04] last:border-0 hover:bg-white/[0.02] transition-all">
-                  <td className="px-5 py-4">
-                    <p className="text-white/85 text-[13px] font-medium">{u.name}</p>
-                    <p className="text-white/30 text-[11px]">{u.email}</p>
+                <tr key={u.id} className="hover:bg-[#fcfcfb] transition-colors">
+                  <td className="px-6 py-5">
+                    <p className="text-slate-900 text-[14px] font-semibold">{u.name}</p>
+                    <p className="text-slate-400 text-[12px]">{u.email}</p>
                   </td>
-                  <td className="px-5 py-4">
-                    <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full border capitalize ${ROLE_STYLE[u.role]}`}>
+                  <td className="px-6 py-5">
+                    <span className={`text-[10px] font-bold px-2.5 py-1 rounded-lg border uppercase tracking-wider ${ROLE_STYLE[u.role]}`}>
                       {u.role}
                     </span>
                   </td>
-                  <td className="px-5 py-4 text-white/40 text-[13px]">
-                    {u.subscription?.plan?.name ?? '—'}
+                  <td className="px-6 py-5 text-slate-600 text-[13px] font-medium">
+                    {u.subscription?.plan?.name ?? 'No active plan'}
                   </td>
-                  <td className="px-5 py-4">
-                    <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full border capitalize ${STATUS_STYLE[u.status]}`}>
+                  <td className="px-6 py-5">
+                    <span className={`text-[10px] font-bold px-2.5 py-1 rounded-lg border uppercase tracking-wider ${STATUS_STYLE[u.status]}`}>
                       {u.status}
                     </span>
                   </td>
-                  <td className="px-5 py-4 text-white/30 text-[13px]">
+                  <td className="px-6 py-5 text-slate-400 text-[13px]">
                     {formatDate(u.createdAt)}
                   </td>
-                  <td className="px-5 py-4">
+                  <td className="px-6 py-5">
                     <div className="flex gap-2">
                       <button
                         onClick={() => handleStatusChange(u.id, u.status === 'active' ? 'suspended' : 'active')}
                         disabled={updating === u.id}
-                        className={`text-[11px] font-semibold px-2.5 py-1.5 rounded-lg border transition-all disabled:opacity-50 ${
+                        className={`text-[11px] font-bold px-3 py-1.5 rounded-xl border transition-all disabled:opacity-50 ${
                           u.status === 'active' 
-                            ? 'text-red-400 bg-red-400/10 border-red-400/20 hover:bg-red-400/20' 
-                            : 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20 hover:bg-emerald-400/20'
+                            ? 'text-red-600 bg-white border-red-100 hover:bg-red-50' 
+                            : 'text-emerald-600 bg-white border-emerald-100 hover:bg-emerald-50'
                         }`}
                       >
                         {u.status === 'active' ? 'Suspend' : 'Activate'}
@@ -190,7 +186,7 @@ export default function AdminUsersPage() {
                       {u.role === 'customer' && (
                         <button
                           onClick={() => { setSelectedUser(u); setAssignModal(true) }}
-                          className="text-blue-400 bg-blue-400/10 hover:bg-blue-400/20 border border-blue-400/20 text-[11px] font-semibold px-2.5 py-1.5 rounded-lg transition-all"
+                          className="text-blue-600 bg-white border border-blue-100 hover:bg-blue-50 text-[11px] font-bold px-3 py-1.5 rounded-xl transition-all"
                         >
                           Assign Tech
                         </button>
@@ -206,36 +202,36 @@ export default function AdminUsersPage() {
 
       {/* Assign Technician Modal */}
       {assignModal && selectedUser && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-[#0f0f1a] border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-[2px] flex items-center justify-center z-50 p-4">
+          <div className="bg-white border border-black/[0.08] shadow-2xl rounded-2xl p-8 w-full max-w-md">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-white font-semibold text-lg">Assign Technician</h3>
-              <button onClick={() => setAssignModal(false)} className="text-white/30 hover:text-white/60">✕</button>
+              <h3 className="text-slate-900 font-semibold text-[18px]">Assign Technician</h3>
+              <button onClick={() => setAssignModal(false)} className="text-slate-300 hover:text-slate-900">✕</button>
             </div>
 
-            <p className="text-white/50 text-sm mb-5">
-              Assigning a technician to <span className="text-white font-medium">{selectedUser.name}</span>
+            <p className="text-slate-500 text-[14px] mb-6">
+              Select a field engineer to handle the installation for <span className="text-slate-900 font-bold">{selectedUser.name}</span>.
             </p>
 
-            <div className="flex flex-col gap-2 mb-6 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+            <div className="flex flex-col gap-2 mb-8 max-h-60 overflow-y-auto pr-2">
               {technicians.length === 0 ? (
-                <p className="text-white/30 text-sm text-center py-4">No active technicians available</p>
+                <p className="text-slate-400 text-sm text-center py-4 italic">No available technicians found</p>
               ) : technicians.map((t) => (
                 <button
                   key={t.id}
                   onClick={() => setSelectedTech(t.id)}
-                  className={`flex items-center gap-3 p-3.5 rounded-xl border text-left transition-all ${
+                  className={`flex items-center gap-4 p-4 rounded-xl border text-left transition-all ${
                     selectedTech === t.id
-                      ? 'bg-emerald-400/10 border-emerald-400/30'
-                      : 'bg-white/[0.02] border-white/[0.07] hover:bg-white/[0.05]'
+                      ? 'bg-blue-50 border-blue-200 ring-1 ring-blue-200'
+                      : 'bg-[#fcfcfb] border-black/[0.05] hover:border-black/[0.1]'
                   }`}
                 >
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-[11px] font-bold flex-shrink-0 ${selectedTech === t.id ? 'bg-emerald-400/20 text-emerald-400' : 'bg-white/[0.06] text-white/40'}`}>
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-[12px] font-bold flex-shrink-0 ${selectedTech === t.id ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-500'}`}>
                     {t.name.split(' ').map((n) => n[0]).join('').toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-white/85 text-sm font-medium truncate">{t.name}</p>
-                    <p className="text-white/30 text-xs truncate">{t.email}</p>
+                    <p className="text-slate-900 text-[14px] font-bold truncate">{t.name}</p>
+                    <p className="text-slate-400 text-[12px] truncate">{t.email}</p>
                   </div>
                 </button>
               ))}
@@ -244,16 +240,16 @@ export default function AdminUsersPage() {
             <div className="flex gap-3">
               <button
                 onClick={() => setAssignModal(false)}
-                className="flex-1 bg-white/[0.04] border border-white/10 text-white/60 font-medium text-sm rounded-lg py-2.5 transition-all"
+                className="flex-1 bg-white border border-black/[0.08] text-slate-600 font-bold text-[13px] rounded-xl py-3.5 hover:bg-slate-50 transition-all"
               >
                 Cancel
               </button>
               <button
                 onClick={handleAssign}
                 disabled={!selectedTech || assigning}
-                className="flex-1 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-60 text-white font-semibold text-sm rounded-lg py-2.5 flex items-center justify-center transition-all"
+                className="flex-1 bg-slate-900 hover:opacity-90 disabled:opacity-50 text-white font-bold text-[13px] rounded-xl py-3.5 flex items-center justify-center transition-all"
               >
-                {assigning ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Assign Now'}
+                {assigning ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Confirm Assignment'}
               </button>
             </div>
           </div>
