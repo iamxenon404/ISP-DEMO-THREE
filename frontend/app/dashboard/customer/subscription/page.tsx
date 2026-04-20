@@ -18,7 +18,6 @@ interface Subscription {
   plan: Plan
 }
 
-// Updated styles to match your clean light-mode UI
 const STATUS_STYLE: Record<string, string> = {
   active:    'text-emerald-600 bg-emerald-50 border-emerald-100',
   suspended: 'text-red-600 bg-red-50 border-red-100',
@@ -47,6 +46,7 @@ export default function SubscriptionPage() {
       ])
       setSub(subRes.data.subscription)
       setPlans(plansRes.data)
+      // Default selection to current plan if it exists
       if (subRes.data.subscription) {
         setSelectedPlan(subRes.data.subscription.plan)
       }
@@ -58,20 +58,34 @@ export default function SubscriptionPage() {
   }
 
   const handleRenew = async () => {
+    if (!selectedPlan) return
+    
     setPaying(true)
+    // Keep the simulated delay for UX feel
     await new Promise((r) => setTimeout(r, 1500))
+    
     try {
-      const res = await api.post('/subscriptions/renew', {
-        planId: selectedPlan?.id,
+      /**
+       * LOGIC FIX: 
+       * If user has no subscription (sub is null), we hit the creation endpoint.
+       * If they have one, we hit the renewal endpoint.
+       */
+      const endpoint = sub ? '/subscriptions/renew' : '/subscriptions/subscribe'
+      
+      const res = await api.post(endpoint, {
+        planId: selectedPlan.id,
       })
+      
       setSub(res.data.subscription)
       setSuccess(true)
+      
       setTimeout(() => {
         setModal(false)
         setSuccess(false)
       }, 2000)
-    } catch (err) {
-      console.error(err)
+    } catch (err: any) {
+      console.error("Transaction Error:", err.response?.data || err.message)
+      alert("Transaction failed: " + (err.response?.data?.message || "Internal Server Error"))
     } finally {
       setPaying(false)
     }
@@ -84,7 +98,7 @@ export default function SubscriptionPage() {
 
   if (loading) {
     return (
-      <div className="min-h-[60vh] flex items-center justify-center">
+      <div className="min-h-[60vh] flex items-center justify-center bg-[#f7f7f5]">
         <div className="w-5 h-5 rounded-full border-2 border-slate-200 border-t-blue-500 animate-spin" />
       </div>
     )
@@ -143,7 +157,7 @@ export default function SubscriptionPage() {
           )}
 
           <button
-            onClick={() => setModal(true)}
+            onClick={() => { setSelectedPlan(sub.plan); setModal(true) }}
             className="w-full bg-slate-900 hover:opacity-90 text-white font-semibold text-[13px] rounded-xl py-4 transition-all"
           >
             {sub.status === 'suspended' ? 'Restore Service' : 'Extend Cycle'}
@@ -151,9 +165,9 @@ export default function SubscriptionPage() {
         </div>
       ) : (
         <div className="bg-white border border-dashed border-black/[0.15] rounded-2xl p-12 text-center">
-          <p className="text-slate-400 text-[14px] mb-6">No active node configuration found.</p>
+          <p className="text-slate-400 text-[14px] mb-6 font-medium">No active node configuration found for this account.</p>
           <button
-            onClick={() => setModal(true)}
+            onClick={() => { setSelectedPlan(plans[0]); setModal(true); }}
             className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-[13px] rounded-xl px-8 py-3.5 transition-all shadow-lg shadow-blue-500/20"
           >
             Deploy New Node
@@ -220,7 +234,9 @@ export default function SubscriptionPage() {
             ) : (
               <>
                 <div className="flex items-center justify-between mb-8">
-                  <h3 className="text-slate-900 font-semibold text-[18px]">Confirm Renewal</h3>
+                  <h3 className="text-slate-900 font-semibold text-[18px]">
+                    {sub ? 'Confirm Renewal' : 'Initial Deployment'}
+                  </h3>
                   <button onClick={() => setModal(false)} className="text-slate-300 hover:text-slate-900 transition-colors">✕</button>
                 </div>
 
@@ -251,7 +267,11 @@ export default function SubscriptionPage() {
                     disabled={paying}
                     className="flex-1 bg-slate-900 hover:opacity-90 disabled:opacity-50 text-white font-semibold text-[13px] rounded-xl py-3.5 flex items-center justify-center transition-all"
                   >
-                    {paying ? <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" /> : 'Authorize'}
+                    {paying ? (
+                      <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                    ) : (
+                      sub ? 'Authorize' : 'Deploy Node'
+                    )}
                   </button>
                 </div>
               </>
