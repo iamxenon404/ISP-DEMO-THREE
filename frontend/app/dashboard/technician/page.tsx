@@ -3,67 +3,69 @@
 import { getStoredUser } from '@/lib/auth'
 
 const stats = [
-  { label: 'Assigned Jobs', value: '7',  sub: '2 today',         color: 'text-emerald-400' },
-  { label: 'In Progress',   value: '2',  sub: 'Active right now', color: 'text-blue-400'    },
-  { label: 'Completed',     value: '41', sub: 'All time',         color: 'text-purple-400'  },
-  { label: 'Pending',       value: '5',  sub: 'Not started',      color: 'text-amber-400'   },
+  { label: 'Assigned Jobs', value: '7',  sub: '2 today',          color: 'text-emerald-600' },
+  { label: 'In Progress',   value: '2',  sub: 'Active right now',  color: 'text-blue-600'    },
+  { label: 'Completed',     value: '41', sub: 'All time',          color: 'text-purple-600'  },
+  { label: 'Pending',       value: '5',  sub: 'Not started',       color: 'text-amber-600'   },
 ]
 
 const jobs = [
-  { id: 'JOB-088', customer: 'Emeka Obi',      address: '14 Awolowo Rd, Ikoyi, Lagos',    type: 'New installation',  status: 'in_progress', time: 'Today, 10:00 AM'  },
-  { id: 'JOB-087', customer: 'Ngozi Eze',       address: '3 Allen Ave, Ikeja, Lagos',       type: 'Router replacement', status: 'pending',     time: 'Today, 2:00 PM'   },
-  { id: 'JOB-086', customer: 'Bola Tinubu Jr.', address: '9 Marina St, Lagos Island',       type: 'New installation',  status: 'pending',     time: 'Tomorrow, 9:00 AM'},
-  { id: 'JOB-085', customer: 'Aisha Garba',     address: '22 Gwarinpa Estate, Abuja',       type: 'Cable fault repair', status: 'completed',   time: 'Yesterday'        },
+  { id: 'JOB-088', customer: 'Emeka Obi',      address: '14 Awolowo Rd, Ikoyi, Lagos',  type: 'New installation',   status: 'in_progress', time: 'Today, 10:00 AM'   },
+  { id: 'JOB-087', customer: 'Ngozi Eze',       address: '3 Allen Ave, Ikeja, Lagos',    type: 'Router replacement', status: 'pending',     time: 'Today, 2:00 PM'    },
+  { id: 'JOB-086', customer: 'Bola Tinubu Jr.', address: '9 Marina St, Lagos Island',   type: 'New installation',   status: 'pending',     time: 'Tomorrow, 9:00 AM' },
+  { id: 'JOB-085', customer: 'Aisha Garba',     address: '22 Gwarinpa Estate, Abuja',   type: 'Cable fault repair', status: 'completed',   time: 'Yesterday'          },
 ]
 
 const STATUS_MAP: Record<string, { label: string; style: string; btn: string }> = {
-  pending:     { label: 'Pending',     style: 'text-amber-400  bg-amber-400/10  border-amber-400/20',   btn: 'Start job'      },
-  in_progress: { label: 'In Progress', style: 'text-blue-400   bg-blue-400/10   border-blue-400/20',    btn: 'Mark complete'  },
-  completed:   { label: 'Completed',   style: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20', btn: ''             },
+  pending:     { label: 'Pending',     style: 'text-amber-600  bg-amber-50  border-amber-100',   btn: 'Start job'     },
+  in_progress: { label: 'In Progress', style: 'text-blue-600   bg-blue-50   border-blue-100',    btn: 'Mark complete' },
+  completed:   { label: 'Completed',   style: 'text-emerald-600 bg-emerald-50 border-emerald-100', btn: ''            },
 }
 
 export default function TechnicianOverview() {
   const user = getStoredUser()
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex-1 bg-[#f7f7f5] min-h-screen px-10 py-12 flex flex-col gap-10">
+
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex items-end justify-between">
         <div>
-          <h1 className="text-white text-2xl font-semibold tracking-tight mb-1">My jobs</h1>
-          <p className="text-white/35 text-sm">
+          <p className="font-mono text-[10px] uppercase tracking-[0.08em] text-slate-400 mb-1">Technician · Field ops</p>
+          <h1 className="text-[30px] font-semibold tracking-tight text-slate-900 leading-none mb-2">My jobs</h1>
+          <p className="text-[14px] text-slate-400">
             Hey {user?.name?.split(' ')[0]}, you have{' '}
-            <span className="text-emerald-400 font-semibold">2 active jobs</span> today.
+            <span className="text-emerald-600 font-semibold">2 active jobs</span> today.
           </p>
         </div>
-        <div className="text-white/40 bg-white/[0.03] border border-white/[0.07] text-xs font-medium px-4 py-2.5 rounded-lg">
-          📅 {new Date().toLocaleDateString('en-NG', { weekday: 'long', day: 'numeric', month: 'short' })}
+        <div className="bg-white border border-black/[0.08] text-slate-500 text-[12px] font-medium px-4 py-2.5 rounded-xl">
+          {new Date().toLocaleDateString('en-NG', { weekday: 'long', day: 'numeric', month: 'short' })}
         </div>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-4 gap-3">
         {stats.map((s) => (
-          <div key={s.label} className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-5 flex flex-col gap-2">
-            <span className="text-white/35 text-xs font-medium">{s.label}</span>
-            <span className={`text-3xl font-bold tracking-tight ${s.color}`}>{s.value}</span>
-            <span className="text-white/30 text-xs">{s.sub}</span>
+          <div key={s.label} className="bg-white border border-black/[0.08] rounded-2xl p-6 hover:-translate-y-0.5 transition-transform cursor-default">
+            <p className="text-[11px] font-medium uppercase tracking-widest text-slate-400 mb-4">{s.label}</p>
+            <p className={`text-[28px] font-semibold tracking-tight leading-none mb-2 ${s.color}`}>{s.value}</p>
+            <p className="text-[11px] text-slate-400">{s.sub}</p>
           </div>
         ))}
       </div>
 
       {/* Jobs */}
-      <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-6">
-        <div className="flex items-center justify-between mb-5">
-          <h3 className="text-white font-semibold text-[15px]">Job schedule</h3>
+      <div className="bg-white border border-black/[0.08] rounded-2xl overflow-hidden">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-black/[0.06]">
+          <span className="text-[13px] font-semibold text-slate-800">Job schedule</span>
           <div className="flex gap-1.5">
             {['All', 'Today', 'Pending', 'Completed'].map((f, i) => (
               <button
                 key={f}
-                className={`text-[12px] font-medium px-3 py-1.5 rounded-lg border transition-all ${
+                className={`text-[11px] font-medium px-3 py-1.5 rounded-lg border transition-all ${
                   i === 0
-                    ? 'text-emerald-400 bg-emerald-400/10 border-emerald-400/25'
-                    : 'text-white/35 bg-transparent border-white/[0.07] hover:text-white/60'
+                    ? 'text-emerald-600 bg-emerald-50 border-emerald-100'
+                    : 'text-slate-400 border-black/[0.07] hover:text-slate-600 hover:bg-slate-50'
                 }`}
               >
                 {f}
@@ -72,35 +74,35 @@ export default function TechnicianOverview() {
           </div>
         </div>
 
-        <div className="flex flex-col gap-3">
+        <div className="px-6 py-4 flex flex-col gap-3">
           {jobs.map((job) => {
             const s = STATUS_MAP[job.status]
             return (
               <div
                 key={job.id}
-                className="flex items-start justify-between gap-6 bg-white/[0.02] hover:bg-white/[0.04] border border-white/[0.05] rounded-xl p-4 transition-all"
+                className="flex items-start justify-between gap-6 bg-slate-50 hover:bg-slate-100/70 border border-black/[0.06] rounded-xl p-5 transition-all"
               >
                 <div className="flex flex-col gap-1.5 flex-1 min-w-0">
                   <div className="flex items-center gap-2.5">
-                    <span className="text-white/20 text-[11px] font-bold font-mono">{job.id}</span>
-                    <span className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${s.style}`}>
+                    <span className="text-slate-400 text-[11px] font-semibold font-mono">{job.id}</span>
+                    <span className={`text-[10px] font-semibold px-2.5 py-0.5 rounded-full border ${s.style}`}>
                       {s.label}
                     </span>
                   </div>
-                  <span className="text-white/85 text-[14px] font-semibold">{job.customer}</span>
-                  <span className="text-white/30 text-[12px]">📍 {job.address}</span>
+                  <span className="text-[14px] font-semibold text-slate-800">{job.customer}</span>
+                  <span className="text-slate-400 text-[12px]">📍 {job.address}</span>
                 </div>
 
                 <div className="flex flex-col items-end gap-2 flex-shrink-0">
-                  <span className="text-white/45 text-[12px] font-medium">{job.type}</span>
-                  <span className="text-white/25 text-[11px]">{job.time}</span>
+                  <span className="text-slate-500 text-[12px] font-medium">{job.type}</span>
+                  <span className="text-slate-400 text-[11px]">{job.time}</span>
                   <div className="flex gap-2 mt-1">
                     {job.status !== 'completed' && (
-                      <button className={`text-[12px] font-semibold px-3 py-1.5 rounded-lg border transition-all hover:opacity-75 ${s.style}`}>
+                      <button className={`text-[11px] font-semibold px-3 py-1.5 rounded-lg border transition-all hover:opacity-75 ${s.style}`}>
                         {s.btn}
                       </button>
                     )}
-                    <button className="text-white/30 hover:text-white/60 bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.07] text-[12px] font-medium px-3 py-1.5 rounded-lg transition-all">
+                    <button className="text-slate-400 hover:text-slate-700 bg-white hover:bg-slate-100 border border-black/[0.08] text-[11px] font-medium px-3 py-1.5 rounded-lg transition-all">
                       Details
                     </button>
                   </div>
@@ -110,6 +112,17 @@ export default function TechnicianOverview() {
           })}
         </div>
       </div>
+
+      {/* Footer */}
+      <div className="flex items-center justify-between pt-4 border-t border-black/[0.06]">
+        <span className="font-mono text-[10px] tracking-widest text-slate-300">© 2026 XENON.ECOSYSTEM</span>
+        <div className="flex gap-5">
+          {['Privacy', 'Terms'].map((l) => (
+            <span key={l} className="text-[12px] text-slate-300 hover:text-slate-700 cursor-pointer transition-colors">{l}</span>
+          ))}
+        </div>
+      </div>
+
     </div>
   )
 }
