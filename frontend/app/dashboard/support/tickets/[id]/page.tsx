@@ -22,14 +22,14 @@ interface Ticket {
 const STATUS_OPTIONS = ['open', 'in_progress', 'resolved', 'closed']
 
 const SENDER_STYLE: Record<string, string> = {
-  customer: 'bg-blue-500/15 border border-blue-500/20 text-blue-100',
-  ai:       'bg-purple-500/15 border border-purple-500/20 text-white/80',
-  support:  'bg-white/[0.08] border border-white/10 text-white/85 ml-auto',
+  customer: 'bg-white border border-black/[0.08] text-slate-700 shadow-sm',
+  ai:       'bg-purple-50 border border-purple-100 text-purple-900',
+  support:  'bg-slate-900 border border-slate-900 text-white ml-auto shadow-md',
 }
 
 const SENDER_LABEL: Record<string, string> = {
-  ai:       '🤖 AI Assistant',
-  customer: '👤 Customer',
+  ai:       'AI Assistant',
+  customer: 'Customer',
 }
 
 export default function SupportTicketPage() {
@@ -95,15 +95,12 @@ export default function SupportTicketPage() {
   }
 
   const formatTime = (date: string) =>
-    new Date(date).toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit' })
-
-  const formatDate = (date: string) =>
-    new Date(date).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: '2-digit' })
+    new Date(date).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
-        <span className="w-6 h-6 border-2 border-white/20 border-t-amber-400 rounded-full animate-spin" />
+        <span className="w-5 h-5 border-2 border-slate-200 border-t-blue-500 rounded-full animate-spin" />
       </div>
     )
   }
@@ -113,36 +110,38 @@ export default function SupportTicketPage() {
   const isResolved = ticket.status === 'resolved' || ticket.status === 'closed'
 
   return (
-    <div className="flex gap-6 h-[calc(100vh-80px)]">
-      {/* Chat */}
+    <div className="flex-1 bg-[#f7f7f5] h-[calc(100vh-40px)] flex gap-8 px-10 py-8">
+      {/* Chat Console */}
       <div className="flex-1 flex flex-col min-w-0">
-        <div className="flex items-center gap-3 mb-4 flex-shrink-0">
+        <div className="flex items-center gap-4 mb-6 flex-shrink-0">
           <button
             onClick={() => router.push('/dashboard/support')}
-            className="text-white/30 hover:text-white/60 text-sm transition-all"
+            className="w-10 h-10 flex items-center justify-center bg-white border border-black/[0.08] rounded-xl hover:border-slate-900 transition-all shadow-sm"
           >
-            ←
+            <span className="text-slate-900 text-lg">←</span>
           </button>
           <div>
-            <h1 className="text-white font-semibold">{ticket.subject}</h1>
-            <p className="text-white/35 text-xs">#{ticket.id} · {ticket.user?.name}</p>
+            <h1 className="text-slate-900 font-bold text-[20px] tracking-tight">{ticket.subject}</h1>
+            <p className="text-slate-400 text-[12px] font-mono uppercase tracking-widest">Case: {ticket.id} • {ticket.user?.name}</p>
           </div>
         </div>
 
-        <div className="flex-1 bg-white/[0.02] border border-white/[0.07] rounded-2xl flex flex-col overflow-hidden">
-          <div className="flex-1 overflow-y-auto p-5 space-y-4">
+        <div className="flex-1 bg-white border border-black/[0.08] rounded-3xl flex flex-col overflow-hidden shadow-sm">
+          <div className="flex-1 overflow-y-auto p-6 space-y-6">
             {messages.map((msg) => {
               const isSupport = msg.senderType === 'support'
               return (
                 <div key={msg.id} className={`flex ${isSupport ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-sm rounded-2xl px-4 py-3 ${SENDER_STYLE[msg.senderType]}`}>
+                  <div className={`max-w-[80%] md:max-w-md rounded-2xl px-5 py-4 ${SENDER_STYLE[msg.senderType]}`}>
                     {!isSupport && (
-                      <p className="text-[11px] font-semibold mb-1 opacity-60">
+                      <p className="text-[10px] font-bold uppercase tracking-widest mb-2 opacity-50">
                         {SENDER_LABEL[msg.senderType] ?? msg.senderName}
                       </p>
                     )}
-                    <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>
-                    <p className="text-[10px] opacity-40 mt-1.5 text-right">{formatTime(msg.createdAt)}</p>
+                    <p className="text-[14px] whitespace-pre-wrap leading-relaxed font-medium">{msg.content}</p>
+                    <p className={`text-[10px] mt-2 font-mono opacity-40 ${isSupport ? 'text-right' : 'text-left'}`}>
+                      {formatTime(msg.createdAt)}
+                    </p>
                   </div>
                 </div>
               )
@@ -150,25 +149,26 @@ export default function SupportTicketPage() {
             <div ref={bottomRef} />
           </div>
 
-          <div className="border-t border-white/[0.07] p-4 flex-shrink-0">
+          {/* Input Area */}
+          <div className="border-t border-black/[0.05] p-5 bg-[#fcfcfb]">
             {isResolved ? (
-              <div className="bg-emerald-400/10 border border-emerald-400/20 rounded-xl p-3 text-center">
-                <p className="text-emerald-400 text-sm font-medium">Ticket is closed</p>
+              <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 text-center">
+                <p className="text-emerald-700 text-[13px] font-bold uppercase tracking-widest">Protocol Finalized: This ticket is closed</p>
               </div>
             ) : (
-              <div className="flex gap-2">
+              <div className="flex gap-3">
                 <input
                   type="text"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
-                  placeholder="Reply to customer..."
-                  className="flex-1 bg-white/[0.05] border border-white/10 focus:border-amber-400/50 rounded-xl px-4 py-2.5 text-white text-sm placeholder:text-white/20 outline-none transition-all"
+                  placeholder="Type your response..."
+                  className="flex-1 bg-white border border-black/[0.08] focus:border-slate-900 rounded-2xl px-5 py-3.5 text-slate-900 text-[14px] placeholder:text-slate-300 outline-none transition-all shadow-sm"
                 />
                 <button
                   onClick={handleSend}
                   disabled={sending || !input.trim()}
-                  className="bg-amber-400 hover:bg-amber-500 disabled:opacity-50 text-black font-bold text-sm px-5 py-2.5 rounded-xl transition-all"
+                  className="bg-slate-900 hover:opacity-90 disabled:opacity-50 text-white font-bold text-[13px] px-8 py-3.5 rounded-2xl transition-all shadow-md active:scale-95"
                 >
                   {sending ? '...' : 'Send'}
                 </button>
@@ -178,28 +178,36 @@ export default function SupportTicketPage() {
         </div>
       </div>
 
-      {/* Sidebar */}
-      <div className="w-64 flex-shrink-0 flex flex-col gap-4">
-        {/* Customer info */}
-        <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-4">
-          <p className="text-white/40 text-xs font-medium uppercase tracking-wider mb-3">Customer</p>
-          <p className="text-white font-semibold text-sm">{ticket.user?.name}</p>
-          <p className="text-white/40 text-xs mt-0.5">{ticket.user?.email}</p>
+      {/* Metadata Sidebar */}
+      <div className="w-72 flex-shrink-0 flex flex-col gap-6">
+        <div className="bg-white border border-black/[0.08] rounded-3xl p-6 shadow-sm">
+          <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-4">Customer Profile</p>
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center font-bold text-slate-500 text-[12px]">
+              {ticket.user?.name.charAt(0)}
+            </div>
+            <div className="min-w-0">
+               <p className="text-slate-900 font-bold text-[14px] truncate">{ticket.user?.name}</p>
+               <p className="text-slate-400 text-[12px] truncate">{ticket.user?.email}</p>
+            </div>
+          </div>
+          <button className="w-full py-2.5 bg-slate-50 border border-black/[0.03] rounded-xl text-slate-600 text-[11px] font-bold hover:bg-slate-100 transition-all uppercase tracking-tight">
+            View Account History
+          </button>
         </div>
 
-        {/* Status control */}
-        <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-4">
-          <p className="text-white/40 text-xs font-medium uppercase tracking-wider mb-3">Update status</p>
+        <div className="bg-white border border-black/[0.08] rounded-3xl p-6 shadow-sm">
+          <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-4">Lifecycle State</p>
           <div className="flex flex-col gap-2">
             {STATUS_OPTIONS.map((s) => (
               <button
                 key={s}
                 onClick={() => handleStatusChange(s)}
                 disabled={updating || ticket.status === s}
-                className={`text-xs font-medium px-3 py-2 rounded-lg border transition-all capitalize disabled:opacity-40 ${
+                className={`text-[11px] font-bold px-4 py-3 rounded-xl border transition-all capitalize tracking-tight disabled:opacity-40 ${
                   ticket.status === s
-                    ? 'bg-amber-400/10 border-amber-400/30 text-amber-400'
-                    : 'bg-white/[0.02] border-white/[0.07] text-white/50 hover:text-white/80 hover:bg-white/[0.05]'
+                    ? 'bg-blue-600 border-blue-600 text-white shadow-md'
+                    : 'bg-slate-50 border-transparent text-slate-400 hover:text-slate-900 hover:bg-slate-100'
                 }`}
               >
                 {s.replace('_', ' ')}
