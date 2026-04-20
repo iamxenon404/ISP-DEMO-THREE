@@ -4,15 +4,14 @@ import { useEffect, useState } from 'react'
 import { getStoredUser } from '@/lib/auth'
 import api from '@/lib/api'
 
-const tickets = [
-  { subject: 'Connection dropping at night', date: '2 days ago', status: 'In Progress' },
-  { subject: 'Speed slower than plan', date: '1 week ago', status: 'Resolved' },
+const TICKETS = [
+  { subject: 'Latency spikes during peak hours', date: '2 days ago', status: 'In Progress' },
+  { subject: 'Router firmware mismatch', date: '1 week ago', status: 'Resolved' },
 ]
 
 const STATUS_STYLE: Record<string, string> = {
-  'In Progress': 'text-amber-400 bg-amber-400/5 border-amber-400/20',
-  'Resolved': 'text-slate-500 bg-white/5 border-white/10',
-  'Open': 'text-blue-400 bg-blue-400/5 border-blue-400/20',
+  'In Progress': 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-400/5 border-amber-200 dark:border-amber-400/20',
+  'Resolved': 'text-slate-400 bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10',
 }
 
 export default function CustomerOverview() {
@@ -32,118 +31,111 @@ export default function CustomerOverview() {
       try {
         const res = await api.get('/subscriptions/my')
         setSub(res.data.subscription)
-      } catch (err) {
-        console.error('Data sync failed', err)
-      } finally {
-        setLoading(false)
-      }
+      } catch (err) { console.error(err) } 
+      finally { setLoading(false) }
     }
     fetchData()
   }, [mounted])
 
   if (!mounted || loading) return (
-    <div className="min-h-[60vh] flex items-center justify-center bg-[#050505]">
-      <div className="w-5 h-5 border-2 border-white/10 border-t-white rounded-full animate-spin" />
+    <div className="min-h-[60vh] flex items-center justify-center bg-white dark:bg-[#050505]">
+      <div className="w-6 h-6 border-2 border-slate-200 dark:border-white/10 border-t-blue-600 dark:border-t-white rounded-full animate-spin" />
     </div>
   )
 
   const formatPrice = (price: number) => `₦${(price || 0).toLocaleString()}`
 
   return (
-    <div className="max-w-[1200px] mx-auto px-4 py-8 md:py-12 space-y-10 selection:bg-white selection:text-black">
+    <div className="max-w-[1200px] mx-auto px-4 py-8 md:py-16 space-y-12 transition-colors duration-500">
       
-      {/* --- PREMIUM HEADER --- */}
-      <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 border-b border-white/[0.03] pb-10">
-        <div className="space-y-1">
-          <p className="text-white/30 text-[10px] font-bold uppercase tracking-[0.3em]">Network Environment</p>
-          <h1 className="text-4xl font-bold tracking-tighter text-white">
-            Welcome, {user?.name?.split(' ')[0] ?? 'there'}
-          </h1>
-          <div className="flex items-center gap-3 mt-4">
-            <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]" />
-              <span className="text-[10px] font-bold uppercase text-emerald-500 tracking-widest">Active Link</span>
-            </div>
-            <span className="text-white/20 font-mono text-[10px]">NODE_{String(user?.id || '0000').padStart(4, '0')}</span>
+      {/* --- HEADER --- */}
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8 pb-10 border-b border-slate-100 dark:border-white/[0.03]">
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-blue-600 shadow-[0_0_10px_rgba(37,99,235,0.4)]" />
+            <p className="text-slate-400 dark:text-white/30 text-[10px] font-black uppercase tracking-[0.3em]">System.Node_{String(user?.id || '000').padStart(3, '0')}</p>
           </div>
+          <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-slate-900 dark:text-white">
+            Hello, {user?.name?.split(' ')[0]}
+          </h1>
         </div>
         
-        <div className="flex gap-3">
-          <button className="px-6 py-2.5 bg-white text-black text-xs font-bold rounded-full hover:bg-white/90 transition-all shadow-[0_8px_20px_rgba(255,255,255,0.1)]">
-            Manage Subscription
+        <div className="flex items-center gap-3">
+          <button className="px-8 py-3 bg-slate-900 dark:bg-white text-white dark:text-black text-xs font-black uppercase tracking-widest rounded-full hover:scale-105 active:scale-95 transition-all shadow-xl dark:shadow-white/5">
+            Manage Plan
           </button>
         </div>
       </header>
 
-      {/* --- STATS GRID (CLEAN & BOLD) --- */}
+      {/* --- STATS GRID --- */}
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Network Plan', val: sub?.plan?.name || '---', detail: 'Current Tier' },
-          { label: 'Throughput', val: `${sub?.plan?.speed || 0} Mbps`, detail: 'Fiber Link' },
-          { label: 'Renewal In', val: `${sub?.daysLeft || 0} Days`, detail: 'Cycle End' },
-          { label: 'Rate', val: formatPrice(sub?.plan?.price), detail: 'Per Month' },
+          { label: 'Active Plan', val: sub?.plan?.name || '---', color: 'text-blue-600' },
+          { label: 'Bandwidth', val: `${sub?.plan?.speed || 0} Mbps`, color: 'text-slate-900 dark:text-white' },
+          { label: 'Time Left', val: `${sub?.daysLeft || 0} Days`, color: 'text-emerald-500' },
+          { label: 'Rate', val: formatPrice(sub?.plan?.price), color: 'text-slate-900 dark:text-white' },
         ].map((s, i) => (
-          <div key={i} className="bg-[#0A0A0A] border border-white/[0.05] p-6 rounded-3xl hover:border-white/10 transition-all group">
-            <p className="text-white/30 text-[10px] font-black uppercase tracking-widest mb-4 group-hover:text-white/50 transition-colors">{s.label}</p>
-            <p className="text-3xl font-bold text-white tracking-tight leading-none">{s.val}</p>
-            <p className="text-white/10 text-[10px] mt-2 font-medium tracking-wide uppercase italic">{s.detail}</p>
+          <div key={i} className="group relative overflow-hidden bg-white dark:bg-[#0A0A0A] border border-slate-200 dark:border-white/[0.05] p-8 rounded-[2rem] transition-all hover:-translate-y-1">
+            {/* Card Shine Effect */}
+            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none bg-[radial-gradient(circle_at_var(--x,_50%)_var(--y,_50%),_rgba(255,255,255,0.06)_0%,_transparent_50%)] dark:bg-[radial-gradient(circle_at_var(--x,_50%)_var(--y,_50%),_rgba(255,255,255,0.03)_0%,_transparent_50%)]" />
+            
+            <p className="text-slate-400 dark:text-white/20 text-[10px] font-black uppercase tracking-widest mb-6">{s.label}</p>
+            <p className={`text-4xl font-bold tracking-tighter leading-none ${s.color}`}>{s.val}</p>
           </div>
         ))}
       </section>
 
-      {/* --- CONTENT MODULES --- */}
+      {/* --- CONTENT BLOCKS --- */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
-        {/* Service Details Panel */}
-        <div className="lg:col-span-7 bg-[#0A0A0A] border border-white/[0.05] rounded-[32px] overflow-hidden">
-          <div className="p-8 border-b border-white/[0.03]">
-            <h3 className="text-lg font-bold text-white tracking-tight">Technical Breakdown</h3>
-            <p className="text-white/30 text-xs mt-1">Real-time parameters for your localized uplink.</p>
+        {/* Main Details Module */}
+        <div className="lg:col-span-7 group relative bg-white dark:bg-[#0A0A0A] border border-slate-200 dark:border-white/[0.05] rounded-[2.5rem] overflow-hidden">
+          <div className="p-8 md:p-10 border-b border-slate-100 dark:border-white/[0.03] flex justify-between items-center">
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white">Service Infrastructure</h3>
+            <span className="text-[10px] font-bold text-slate-400 dark:text-white/20 uppercase tracking-widest">v2.4 Stable</span>
           </div>
-          <div className="p-8 grid sm:grid-cols-2 gap-8">
-            <div className="space-y-6">
+          
+          <div className="p-8 md:p-10 grid md:grid-cols-2 gap-12">
+            <div className="space-y-8">
               {[
-                { label: 'Bandwidth Limit', value: `${sub?.plan?.speed}Mbps Dedicated` },
-                { label: 'Billing Period', value: 'Monthly Automated' },
-                { label: 'Expiry Date', value: sub?.expiryDate ? new Date(sub.expiryDate).toDateString() : 'N/A' },
+                { label: 'Hardware Spec', value: 'Xenon Fiber v2 Terminal' },
+                { label: 'Next Cycle', value: sub?.expiryDate ? new Date(sub.expiryDate).toLocaleDateString() : 'N/A' },
+                { label: 'Uplink Status', value: 'Synchronized / Optimal' },
               ].map((item, idx) => (
-                <div key={idx} className="flex flex-col gap-1">
-                  <span className="text-[10px] uppercase font-bold text-white/20 tracking-[0.1em]">{item.label}</span>
-                  <span className="text-sm font-semibold text-white/80">{item.value}</span>
+                <div key={idx} className="space-y-1">
+                  <p className="text-[10px] uppercase font-black text-slate-400 dark:text-white/20 tracking-wider">{item.label}</p>
+                  <p className="text-sm font-bold text-slate-700 dark:text-white/80">{item.value}</p>
                 </div>
               ))}
             </div>
-            <div className="bg-white/[0.01] border border-white/[0.03] rounded-3xl p-6 flex flex-col justify-center items-center text-center">
-              <div className="relative">
-                <svg className="w-24 h-24 transform -rotate-90">
-                  <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="4" fill="transparent" className="text-white/5" />
-                  <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="4" fill="transparent" strokeDasharray="251.2" strokeDashoffset="25.12" className="text-white" />
-                </svg>
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-xl font-bold text-white leading-none">90%</span>
-                </div>
-              </div>
-              <p className="text-[10px] font-bold text-white/30 uppercase mt-4 tracking-widest">Uptime Strength</p>
+            
+            <div className="flex flex-col items-center justify-center border-l border-slate-100 dark:border-white/[0.03] pl-0 md:pl-12">
+               <div className="w-24 h-24 rounded-full border-4 border-slate-100 dark:border-white/5 flex items-center justify-center relative">
+                  <div className="absolute inset-0 rounded-full border-t-4 border-blue-600 animate-[spin_3s_linear_infinite]" />
+                  <span className="text-xl font-black text-slate-900 dark:text-white leading-none">99%</span>
+               </div>
+               <p className="mt-4 text-[10px] font-black uppercase text-slate-400 dark:text-white/30 tracking-widest">Uptime Strength</p>
             </div>
           </div>
         </div>
 
-        {/* Support Sidebar */}
-        <div className="lg:col-span-5 bg-[#0A0A0A] border border-white/[0.05] rounded-[32px] p-8">
-          <div className="flex justify-between items-center mb-8">
-            <h3 className="text-lg font-bold text-white tracking-tight">Active Logs</h3>
-            <button className="text-[10px] font-bold bg-white/5 text-white px-3 py-1.5 rounded-lg border border-white/10 hover:bg-white/10 transition-all uppercase tracking-widest">
-              Report Issue
+        {/* Support Module */}
+        <div className="lg:col-span-5 bg-white dark:bg-[#0A0A0A] border border-slate-200 dark:border-white/[0.05] rounded-[2.5rem] p-8 md:p-10">
+          <div className="flex justify-between items-center mb-10">
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white">Recent Activity</h3>
+            <button className="text-[10px] font-black text-blue-600 dark:text-white uppercase tracking-widest px-4 py-2 bg-blue-50 dark:bg-white/5 rounded-full border border-blue-100 dark:border-white/10 hover:scale-105 transition-transform">
+              New Ticket
             </button>
           </div>
-          <div className="space-y-3">
-            {tickets.map((t, idx) => (
-              <div key={idx} className="flex items-center justify-between p-4 bg-white/[0.01] border border-white/[0.03] rounded-2xl hover:bg-white/[0.03] transition-all cursor-pointer">
+          
+          <div className="space-y-4">
+            {TICKETS.map((t, idx) => (
+              <div key={idx} className="group/ticket flex items-center justify-between p-5 bg-slate-50 dark:bg-white/[0.01] border border-slate-100 dark:border-white/[0.03] rounded-3xl hover:border-slate-300 dark:hover:border-white/10 transition-all cursor-pointer">
                 <div>
-                  <p className="text-xs font-bold text-white/80 mb-1">{t.subject}</p>
-                  <p className="text-[10px] text-white/20 font-medium uppercase">{t.date}</p>
+                  <p className="text-sm font-bold text-slate-800 dark:text-white/80 mb-1 group-hover/ticket:text-blue-600 dark:group-hover/ticket:text-white transition-colors">{t.subject}</p>
+                  <p className="text-[10px] text-slate-400 dark:text-white/20 font-black uppercase tracking-tighter">{t.date}</p>
                 </div>
-                <span className={`text-[9px] font-black uppercase px-2 py-1 rounded border ${STATUS_STYLE[t.status]}`}>
+                <span className={`text-[9px] font-black uppercase px-3 py-1 rounded-full border shadow-sm ${STATUS_STYLE[t.status]}`}>
                   {t.status}
                 </span>
               </div>
@@ -153,10 +145,13 @@ export default function CustomerOverview() {
 
       </section>
 
-      {/* --- FOOTER (SUBTLE) --- */}
-      <footer className="pt-10 flex justify-between items-center text-[10px] font-bold text-white/10 uppercase tracking-[0.3em]">
-        <p>© XENON NETWORKS 2026</p>
-        <p>SECURE TERMINAL</p>
+      {/* --- FOOTER --- */}
+      <footer className="pt-12 flex justify-between items-center text-[10px] font-black text-slate-300 dark:text-white/10 uppercase tracking-[0.4em]">
+        <p>© 2026 XENON.ECOSYSTEM</p>
+        <div className="flex gap-6">
+          <span className="cursor-pointer hover:text-slate-900 dark:hover:text-white transition-colors tracking-tighter">PRIVACY</span>
+          <span className="cursor-pointer hover:text-slate-900 dark:hover:text-white transition-colors tracking-tighter">TERMS</span>
+        </div>
       </footer>
     </div>
   )
