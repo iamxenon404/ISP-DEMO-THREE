@@ -46,9 +46,11 @@ export default function SubscriptionPage() {
       ])
       setSub(subRes.data.subscription)
       setPlans(plansRes.data)
-      // Default selection to current plan if it exists
+      
       if (subRes.data.subscription) {
         setSelectedPlan(subRes.data.subscription.plan)
+      } else if (plansRes.data.length > 0) {
+        setSelectedPlan(plansRes.data[0]) // Default to first plan for new users
       }
     } catch (err) {
       console.error(err)
@@ -61,16 +63,15 @@ export default function SubscriptionPage() {
     if (!selectedPlan) return
     
     setPaying(true)
-    // Keep the simulated delay for UX feel
     await new Promise((r) => setTimeout(r, 1500))
     
     try {
       /**
-       * LOGIC FIX: 
-       * If user has no subscription (sub is null), we hit the creation endpoint.
-       * If they have one, we hit the renewal endpoint.
+       * If 'sub' is null, we hit the creation endpoint.
+       * Most backends use POST /subscriptions to create. 
+       * If your backend uses a different name (like /create), change it below.
        */
-      const endpoint = sub ? '/subscriptions/renew' : '/subscriptions/subscribe'
+      const endpoint = sub ? '/subscriptions/renew' : '/subscriptions'
       
       const res = await api.post(endpoint, {
         planId: selectedPlan.id,
@@ -85,7 +86,8 @@ export default function SubscriptionPage() {
       }, 2000)
     } catch (err: any) {
       console.error("Transaction Error:", err.response?.data || err.message)
-      alert("Transaction failed: " + (err.response?.data?.message || "Internal Server Error"))
+      // If /subscriptions still 404s, your backend might use /subscriptions/subscribe
+      alert(`Error: ${err.response?.status === 404 ? "Endpoint not found for new users. Check backend route for creating subs." : "Transaction failed"}`)
     } finally {
       setPaying(false)
     }
@@ -107,7 +109,6 @@ export default function SubscriptionPage() {
   return (
     <div className="flex-1 bg-[#f7f7f5] min-h-screen px-10 py-12 flex flex-col gap-10">
       
-      {/* Header */}
       <div>
         <h1 className="text-[30px] font-semibold tracking-tight text-slate-900 leading-none mb-2">
           Subscription
@@ -115,7 +116,6 @@ export default function SubscriptionPage() {
         <p className="text-[14px] text-slate-400">Manage your network node and billing cycle.</p>
       </div>
 
-      {/* Current subscription card */}
       {sub ? (
         <div className="bg-white border border-black/[0.08] rounded-2xl p-8 overflow-hidden relative">
           <div className="flex items-start justify-between mb-8">
@@ -142,7 +142,6 @@ export default function SubscriptionPage() {
             ))}
           </div>
 
-          {/* Warnings */}
           {(sub.daysLeft <= 7 || sub.status === 'suspended') && (
             <div className={`flex items-center gap-3 px-5 py-4 rounded-xl border mb-8 ${
                 sub.status === 'suspended' ? 'bg-red-50 border-red-100 text-red-600' : 'bg-amber-50 border-amber-100 text-amber-600'
@@ -167,7 +166,7 @@ export default function SubscriptionPage() {
         <div className="bg-white border border-dashed border-black/[0.15] rounded-2xl p-12 text-center">
           <p className="text-slate-400 text-[14px] mb-6 font-medium">No active node configuration found for this account.</p>
           <button
-            onClick={() => { setSelectedPlan(plans[0]); setModal(true); }}
+            onClick={() => { setModal(true) }}
             className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-[13px] rounded-xl px-8 py-3.5 transition-all shadow-lg shadow-blue-500/20"
           >
             Deploy New Node
@@ -175,7 +174,6 @@ export default function SubscriptionPage() {
         </div>
       )}
 
-      {/* Available plans */}
       <div>
         <h3 className="text-[13px] font-semibold text-slate-800 uppercase tracking-widest mb-5">Available Protocols</h3>
         <div className="grid grid-cols-3 gap-3">
@@ -217,7 +215,6 @@ export default function SubscriptionPage() {
         </div>
       </div>
 
-      {/* Modal */}
       {modal && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-[2px] flex items-center justify-center z-50 p-4">
           <div className="bg-white border border-black/[0.08] shadow-2xl rounded-2xl p-8 w-full max-w-md">
